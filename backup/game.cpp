@@ -153,25 +153,19 @@ int CGame::InitSDL()
     return 0;
 }
 
-void CGame::QuitGame()
-{
-    SDL_DestroyWindow(window);
-    SDL_DestroyRenderer(renderer);
-}
-
 int CGame::Run()
 {
     // load gfx
-    HelpGridLoad(renderer);
+    HelpGridLoad();
     HelpKeypadLoad(
         renderer,
         keypad.fullKeypadRect,
         keypad);
-    // get a zero up
+
+    //bump UI(?) and get a display
+    GetOrientation();
     HelpDisplayDisplay();
-        
-    //HandleUI();
-        
+
     while (loopgame)
     {
         HandleUI();
@@ -183,17 +177,126 @@ int CGame::Run()
     return 0;
 }
 
+void CGame::QuitGame()
+{
+    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
+}
+
+int CGrid::Sum(int a, int b)
+{
+    return a - b;
+}
+
+int CGrid::Total(int a, int b)
+{
+    return a + b;
+}
+
+void CGrid::InitUp(int column)
+{
+    for (int i = column+column*3;
+         i > GRIDWIDTH;
+         i -= GRIDWIDTH)
+    {
+        int first = grid[i].cellValue;
+        int second = grid[i - GRIDWIDTH].cellValue;
+        int ans = Sum(first, second);
+        int t = Total(first, ans);
+        answerGrid[i-GRIDWIDTH*2].cellValue = t;
+    }
+}
+
+void CGrid::InitDown(int column)
+{
+}
+
+void CGrid::InitLeft(int row)
+{
+}
+
+void CGrid::InitRight(int row)
+{
+}
+
 void CGrid::LoadGrid(SDL_Renderer *
                          renderer)
 {
     for (int i = 0; i < 36; ++i)
     {
         Cell tempCell{};
+        tempCell.cellPos = i;
         tempCell.cellTexture = loadImage(
             renderer, "imgs/blankwhite.png");
-            
+        //test
+        //std::string s = std::to_string(i);
+        /*tempCell.cellValueTexture =
+            loadText(renderer, s.c_str());
+*/
         // deal with the positions in HandleUI
         grid.push_back(tempCell);
+
+        switch (i)
+        {
+        case middleNumbers::LEFT_UP:
+        {
+            grid[i].cellValue = w;
+            std::string sw = std::to_string(w);
+            int size = sw.size();
+            grid[i].cellValueLength = size;
+            grid[i].cellValueTexture =
+                loadText(renderer, sw.c_str());
+
+            break;
+        }
+        case middleNumbers::RIGHT_UP:
+        {
+            grid[i].cellValue = x;
+            std::string sx = std::to_string(x);
+            int size = sx.size();
+            grid[i].cellValueLength = size;
+            grid[i].cellValueTexture =
+                loadText(renderer, sx.c_str());
+            /*
+            grid[i].cellValueRect.x = xX;
+            grid[i].cellValueRect.y = xY;
+            */
+            break;
+        }
+        case middleNumbers::LEFT_DOWN:
+        {
+            grid[i].cellValue = y;
+            std::string sy = std::to_string(y);
+            int size = sy.size();
+            grid[i].cellValueLength = size;
+            grid[i].cellValueTexture =
+                loadText(renderer, sy.c_str());
+            /*
+            grid[i].cellValueRect.x = yX;
+            grid[i].cellValueRect.y = yY;
+            */
+            break;
+        }
+        case middleNumbers::RIGHT_DOWN:
+        {
+            grid[i].cellValue = z;
+            std::string sz = std::to_string(z);
+            int size = sz.size();
+            grid[i].cellValueLength = size;
+            grid[i].cellValueTexture =
+                loadText(renderer, sz.c_str());
+            /*
+            grid[i].cellValueRect.x = zX;
+            grid[i].cellValueRect.y = zY;
+            */
+            break;
+        }
+        default:
+        {
+            gridDebug = true;
+            break;
+        }
+        }
     }
 
     selectTexture = loadImage(
@@ -201,17 +304,29 @@ void CGrid::LoadGrid(SDL_Renderer *
         "imgs/blankred.png");
 }
 
+void CGrid::LoadAnswerGrid(SDL_Renderer* renderer)
+{
+    InitUp(2);
+}
+
 // CGrid needs CGame renderer
-void CGame::HelpGridLoad(
-    SDL_Renderer *renderer)
+void CGame::HelpGridLoad()
 {
     LoadGrid(renderer);
+}
+
+void CGame::HelpKeypadLoad(
+    SDL_Renderer *renderer,
+    SDL_Rect rect,
+    Keypad &keypad)
+{
+    LoadKeys(renderer, rect, keypad);
 }
 
 void CKey::LoadKeys(
     SDL_Renderer *renderer,
     SDL_Rect rect,
-    Keypad& keypad)
+    Keypad &keypad)
 {
     files = {
         "keyONE.png",
@@ -235,8 +350,8 @@ void CKey::LoadKeys(
     for (int i = 0; i < files.size(); ++i)
     {
         CKey key{};
-        key.keyRect.w = 120;
-        key.keyRect.h = 120;
+        key.keyRect.w = KEYWIDTH;
+        key.keyRect.h = KEYWIDTH;
         key.keypos = i;
 
         std::string s = "imgs/";
@@ -248,10 +363,10 @@ void CKey::LoadKeys(
         keypad.keys.push_back(key);
     }
     std::string h = "imgs/keyhighlight.png";
-    
+
     keypad.keyHighlight =
         loadImage(renderer, h.c_str());
-        
+
     // and some initialising a difficult keypad
     keypad.keys[0].value = 1;
     keypad.keys[0].kind = '8';
@@ -282,15 +397,70 @@ void CKey::LoadKeys(
     keypad.keys[13].value = -1;
     keypad.keys[13].kind = 'b';
     keypad.keys[14].value = -1;
-    keypad.keys[15].kind = 'o';
+    keypad.keys[14].kind = 'o';
+
+    // extra hidden key
+    CKey empty{};
+    keypad.keys.push_back(empty);
+    keypad.keys[15].kind = '*';
+    keypad.keys[15].value = -1;
 }
 
-void CGame::HelpKeypadLoad(
+void CGrid::PutGrid(
     SDL_Renderer *renderer,
-    SDL_Rect rect,
-    Keypad& keypad)
+    const Display display)
 {
-    LoadKeys(renderer, rect, keypad);
+    if (grid[selected].cellValueTexture == NULL)
+    {
+        grid[selected].cellValueTexture =
+            loadText(renderer, display.myText);
+    }
+    else
+    {
+        SDL_DestroyTexture(
+            grid[selected].cellValueTexture);
+        grid[selected].cellValueTexture =
+            loadText(renderer, display.myText);
+    }
+
+    // cell associated with display
+    grid[selected].cellValue =
+        display.myTextToInt;
+    grid[selected].cellValueLength =
+        display.lengthOfDisplay;
+}
+
+// match the grid coordinates
+// grid left 0,0 - touch 0,0
+// grid top 0,0 - touch 0,0
+// grid right sw-grid size,0 - touch sw-720,0
+void CGrid::SelectedCell(
+    SDL_Rect touch, SDL_Rect grid)
+{
+    int cellX = int((touch.x - grid.x) / CELLWIDTH);
+    int cellY = int((touch.y - grid.y) / CELLWIDTH);
+    selected = (GRIDWIDTH * cellY) + cellX;
+}
+
+// use touch Rect to select individual cells
+void CGame::TouchingGrid()
+{
+    SelectedCell(touch, gridArea);
+}
+
+//void CGame::PositionCells(int offset)
+void CGame::PositionGrid(int offset)
+{
+    for (int i = 0; i < grid.size(); ++i)
+    {
+        //grid[i].x += gridArea + ( )
+        grid[i].x = (i % 6) * CELLWIDTH + offset;
+        grid[i].y = int(i / 6) * CELLWIDTH;
+
+        //the cellValues
+        grid[i].cellValueRect.x = grid[i].x;
+        grid[i].cellValueRect.y = grid[i].y;
+    }
 }
 
 // a helpful post-input method
@@ -301,49 +471,42 @@ void CGame::HelpDisplayDisplay()
     // remove 0001 leading zeros
     try
     {
-        display.myTextInt =
-             std::stoi(display.myText);
+        display.myTextToInt =
+            std::stoi(display.myText);
         std::string s =
-            std::to_string(display.myTextInt);
-        //lengthOfText = s.length();
+            std::to_string(display.myTextToInt);
+
         strcpy(display.myText, s.c_str());
         display.lengthOfDisplay = s.length();
+        gameDebug = false;
     }
     catch (std::invalid_argument &err)
     {
-        //strcpy(display.myText, "NAN");
         strcpy(display.myText, "0");
+        // stop 0 being stretched
+        std::string ss = display.myText;
+        display.lengthOfDisplay = ss.size();
+
+        gameDebug = true;
     }
-    
+
     // remove old text
-    if(display.displayTexture != NULL)
+    if (display.displayTexture != NULL)
     {
         SDL_DestroyTexture(display.displayTexture);
         display.displayTexture = NULL;
     }
-    if(display.displayTexture == NULL)
+    if (display.displayTexture == NULL)
     {
-    display.displayTexture =
-        loadText(renderer, display.myText);
+        display.displayTexture =
+            loadText(renderer, display.myText);
     }
 }
 
-// match the grid coordinates
-// grid left 0,0 - touch 0,0
-// grid top 0,0 - touch 0,0
-// grid right sw-grid size,0 - touch sw-720,0
-void CGrid::SelectedCell(
-    SDL_Rect touch, SDL_Rect grid)
+// our answer is a fairly important decision
+void CGame::HelpPutGrid()
 {
-    int cellX = int((touch.x - grid.x) / 120);
-    int cellY = int((touch.y - grid.y) / 120);
-    selected = (6 * cellY) + cellX;
-}
-
-// use touch Rect to select individual cells
-void CGame::TouchingGrid()
-{
-    SelectedCell(touch, gridArea);
+    PutGrid(renderer, display);
 }
 
 // every time SDL_FINGERDOWN
@@ -354,52 +517,82 @@ void CGame::TouchingKey(int i)
     // position for highlight
     int keypos = i;
     keypad.keyPressed = keypos;
-    
+
     // please find the key we are on about
     CKey k = keypad.keys[i];
-    switch(k.kind)
+    switch (k.kind)
     {
-        case '8':
+    case '8':
+    {
+        // allow no more numbers
+        if (display.lengthOfDisplay >=
+            display.MAXINPUT)
         {
-            std::string s = std::to_string(k.value);
-            strcat(display.myText, s.c_str());
-            
-            //+display.lengthOfDisplay;
-            break;
+            return;
         }
-        case 'c':
+        std::string s = std::to_string(k.value);
+        strcat(display.myText, s.c_str());
+        break;
+    }
+    case 'c':
+    {
+        strcpy(display.myText, "0");
+        break;
+    }
+    case '-':
+    {
+        int i = std::stoi(display.myText);
+        // only once
+        if (i > 0)
         {
-            strcpy(display.myText, "0");
-            
-            //display.lengthOfDisplay = 0;
-            break;
-        }
-        case '-':
-        {
-            int i = std::stoi(display.myText);
-            i = 0-i;
+            i = 0 - i;
             std::string s = std::to_string(i);
             strcpy(display.myText, s.c_str());
-            break;
+            ++display.lengthOfDisplay;
         }
-        case '+':
+        break;
+    }
+    case '+':
+    {
+        int i = std::stoi(display.myText);
+        // only once
+        if (i < 0)
         {
-            int i = std::stoi(display.myText);
             i = abs(i);
             std::string s = std::to_string(i);
             strcpy(display.myText, s.c_str());
-            break;
+            // length would be 1 less
+            // as we remove the '-' symbol
+            --display.lengthOfDisplay;
         }
-        case 'b':
-        {
-            std::string s = display.myText;
-            s.pop_back();
-            strcpy(display.myText, s.c_str());
-            break;
-        }
+        break;
     }
-    //switch(kind)
-    //case
+    case 'b':
+    {
+        std::string s = display.myText;
+        s.pop_back();
+        strcpy(display.myText, s.c_str());
+        break;
+    }
+    // case 'o' will always be true
+    // as keyPressed is always 14
+    // unless there is a 15th key
+    // to hide it
+    case 'o':
+    {
+        HelpPutGrid();
+        strcpy(display.myText, "0");
+        break;
+    }
+    default:
+    {
+        // nothing yet
+        gameDebug = true;
+        strcpy(display.myText, "101");
+        return;
+        break;
+    }
+    }
 }
 
 // a rects x is always along the usual x axis
@@ -439,6 +632,7 @@ void CGame::HandleUI()
     // something went wrong
     default:
     {
+        gameDebug = true;
         gridXpos = -360;
         squareXSpace = -360;
         squareYSpace = -360;
@@ -461,15 +655,14 @@ void CGame::HandleUI()
     display.numberDisplayRect.w =
         display.TEXTWIDTH * 6;
     display.numberDisplayRect.h = 100;
-    
+
     // another go at display alignment
     // i need length of myText
     // to place in the middle
     display.numberDisplayRect.x =
-        (screenWidth/2) -
-            (display.lengthOfDisplay
-            * (display.TEXTWIDTH /2));
-                
+        (screenWidth / 2) -
+        (display.lengthOfDisplay * (display.TEXTWIDTH / 2));
+
     display.numberDisplayRect.w =
         display.TEXTWIDTH * display.lengthOfDisplay;
 
@@ -480,27 +673,17 @@ void CGame::HandleUI()
     keypad.fullKeypadRect.w = 600;
     keypad.fullKeypadRect.h = 360;
 
-    // when the keypad changes
-    // position, update all keys
+    // place keys on keypad
     for (int i = 0; i < files.size(); ++i)
     {
-        int whatX = int(i % 5) * 120;
+        int whatX = int(i % 5) * KEYWIDTH;
         keypad.keys[i].keyRect.x =
             keypad.fullKeypadRect.x +
-                whatX;
-        int whatY = int(i / 5) * 120;
+            whatX;
+        int whatY = int(i / 5) * KEYWIDTH;
         keypad.keys[i].keyRect.y =
             keypad.fullKeypadRect.y +
-                whatY;
-    }
-}
-
-void CGame::PositionGrid(int offset)
-{
-    for (int i = 0; i < grid.size(); ++i)
-    {
-        grid[i].x = (i % 6) * 120 + offset;
-        grid[i].y = int(i / 6) * 120;
+            whatY;
     }
 }
 
@@ -533,6 +716,10 @@ int CGame::GetOrientation()
         ans = 3;
         break;
     }
+    default:
+    {
+        gameDebug = true;
+    }
     }
 
     SDL_GetRendererOutputSize(
@@ -563,19 +750,36 @@ void CGame::InputGame()
             {
                 TouchingGrid();
             }
-            
+
             // if we aren't pressing anything
-            keypad.keyPressed = 14;
-            
-            for(int i=0;i<files.size();++i)
+            keypad.keyPressed =
+                namedKey::KEY_EMPTY;
+
+            if (SDL_HasIntersection(
+                    &touch, &keypad.fullKeypadRect))
             {
-                if(SDL_HasIntersection(
-                    &touch,
-                    &keypad.keys[i].keyRect))
+                for (int i = 0; i < files.size(); ++i)
                 {
-                    TouchingKey(i);
-                    //TouchingKey(CKey key.kind);
+                    if (SDL_HasIntersection(
+                            &touch,
+                            &keypad.keys[i].keyRect))
+                    {
+                        TouchingKey(i);
+                    }
                 }
+
+                //we place it by hitting OK
+                /*
+                DO THIS IN TOUCHING KEY
+                
+                if (SDL_HasIntersection(
+                        &touch,
+                        &keypad.keys
+                        [namedKey::KEY_OK].keyRect))
+                {
+                    HelpPutGrid();
+                }
+                */
             }
             // here is the per touch update
             HelpDisplayDisplay();
@@ -583,31 +787,25 @@ void CGame::InputGame()
         }
         case SDL_FINGERUP:
         {
-            keypad.keyPressed = 14;
+            keypad.keyPressed =
+                namedKey::KEY_EMPTY;
         }
         case SDL_FINGERMOTION:
         {
             // cancel things
             /*
             there might be an error later
-            if OK if pressed
-            we will always send
-            too early
+            if we use an off screen key
             */
-            keypad.keyPressed = 14;
+            keypad.keyPressed =
+                namedKey::KEY_EMPTY;
             break;
         }
-        }
-        /*
-        switch(event.display.event)
+        default:
         {
-            case SDL_DISPLAYEVENT_ORIENTATION:
-            {
-                HandleUI();
-                break;
-            }
+            gameDebug = true;
         }
-        */
+        }
     }
 }
 
@@ -620,7 +818,7 @@ void CGame::UpdateScreen()
     SDL_RenderClear(renderer);
 
     //
-    // grid
+    // grid cells
     //
     for (int i = 0; i < grid.size(); ++i)
     {
@@ -646,19 +844,41 @@ void CGame::UpdateScreen()
                 NULL,
                 &temp);
         }
-    }
+        //
+        // cellValueTexture
+        //
 
+        // very strange how selected is
+        // used here
+        if (grid[i].cellValueTexture != NULL)
+        {
+            SDL_RenderCopy(
+                renderer,
+                grid[i].cellValueTexture,
+                NULL,
+                &grid[i].cellValueRect);
+        }
+    }
     //
     // display
     //
+    
+// ========== border =====
+    display.displayBorder.x =
+        (screenWidth / 2) -
+        ((display.TEXTWIDTH *
+          display.MAXDIGITS) /
+         2);
+    display.displayBorder.y =
+        display.numberDisplayRect.y;
+
     SDL_SetRenderDrawColor(renderer,
                            200, 200, 250, 255);
     SDL_RenderDrawRect(renderer,
-        &display.numberDisplayRect);
-    /*SDL_RenderFillRect(renderer,
-                       &display.numberDisplayRect);
-    */
-    if(display.displayTexture != NULL)
+                       &display.displayBorder);
+//=========================
+    
+    if (display.displayTexture != NULL)
     {
         SDL_RenderCopy(
             renderer,
@@ -666,6 +886,11 @@ void CGame::UpdateScreen()
             NULL,
             &display.numberDisplayRect);
     }
+    else
+    {
+        gameDebug = true;
+    }
+
     //
     // keypad
     //
@@ -673,62 +898,34 @@ void CGame::UpdateScreen()
                            50, 150, 50, 255);
     SDL_RenderFillRect(renderer,
                        &keypad.fullKeypadRect);
-    /*
-    SDL_Rect r{0,0,120,120};
+
     SDL_RenderCopy(
         renderer,
-        debugText,
+        keypad.keyHighlight,
         NULL,
-        &r);
-    
-    SDL_RenderCopy(
-        renderer,
-        keypad.keys[0].keyTexture,
-        NULL,
-        &keypad.keys[0].keyRect);
-    */
-    
-    SDL_RenderCopy(
-            renderer,
-            keypad.keyHighlight,
-            NULL,
-            &keypad.keys[keypad.keyPressed].keyRect);
-            
+        &keypad.keys[keypad.keyPressed].keyRect);
+
     for (int i = 0; i < files.size(); ++i)
     {
-        /*
-        i would need a spare index to hide it
-        unless it went on OK
-        */
+        //if(!=NULL)
         SDL_RenderCopy(
             renderer,
             keypad.keys[i].keyTexture,
             NULL,
             &keypad.keys[i].keyRect);
     }
-    
 
-    if (debug)
+    //
+    // debug
+    //
+    if (gameDebug || gridDebug || keyDebug)
     {
-        SDL_Rect d{0, 0, screenWidth, 100};
+        SDL_Rect d{0, screenHeight / 2, screenWidth, 30};
 
         SDL_SetRenderDrawColor(
             renderer,
             255, 255, 0, 255);
-        /*
-    if (screenWidth > 720)
-    {
-        SDL_SetRenderDrawColor(
-            renderer,
-            0, 255, 255, 255);
-    }
-    else
-    {
-        SDL_SetRenderDrawColor(
-            renderer,
-            255, 255, 0, 255);
-    }
-    */
+
         SDL_RenderFillRect(
             renderer, &d);
     }
