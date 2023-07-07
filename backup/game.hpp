@@ -117,23 +117,22 @@ class CKey
 class CGrid
 {
     // methods for filling answer
-    std::vector<Cell> answerGrid{0};
     int Sum(int a, int b);
     int Total(int a, int b);
     void InitUp(int column);
     void InitDown(int column);
     void InitLeft(int row);
     void InitRight(int row);
-
-    //void StartGrid();
-
+    
+    void StartGrid();
+    void CalculateAnswerGrid();
     // return position of error
-    void HiddenAnswerGrid();
     int CheckGrid();
 
   public:
     SDL_Rect gridArea{0};
     SDL_Texture *selectTexture = nullptr;
+std::vector<Cell> answerGrid{};
 
     bool gridDebug{false};
 
@@ -163,13 +162,13 @@ class CGrid
     */
 
     void LoadGrid(SDL_Renderer *renderer);
+    void LoadAnswerGrid(SDL_Renderer* renderer);
     void SelectedCell(
         SDL_Rect r, SDL_Rect g);
     void PutGrid(
         SDL_Renderer *renderer,
         const Display display);
 
-    void LoadAnswerGrid(SDL_Renderer *renderer);
     bool GridComplete();
 };
 

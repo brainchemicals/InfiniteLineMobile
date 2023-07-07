@@ -161,6 +161,7 @@ int CGame::Run()
         renderer,
         keypad.fullKeypadRect,
         keypad);
+    HelpAnswerGrid();
 
     //bump UI(?) and get a display
     GetOrientation();
@@ -193,30 +194,149 @@ int CGrid::Total(int a, int b)
     return a + b;
 }
 
-void CGrid::InitUp(int column)
+// InitUp first as we store w,x,y,z
+void CGrid::InitUp(int where)
 {
-    for (int i = column+column*3;
-         i > GRIDWIDTH;
-         i -= GRIDWIDTH)
+    answerGrid[20].cellValue = 
+        grid[20].cellValue;
+    answerGrid[14].cellValue =
+        grid[14].cellValue;
+    answerGrid[21].cellValue =
+        grid[21].cellValue;
+    answerGrid[15].cellValue =
+        grid[15].cellValue;
+        
+    /*
+    int cellHigh = answerGrid[20].cellValue;
+    int cellLow = answerGrid[14].cellValue;
+    int ans = Sum(cellHigh, cellLow);
+    int total = Sum(cellLow, ans);
+    answerGrid[8].cellValue = total;
+    
+    cellHigh = answerGrid[14].cellValue;
+    cellLow = answerGrid[8].cellValue;
+    ans = Sum(cellHigh, cellLow);
+    total = Sum(cellLow, ans);
+    answerGrid[2].cellValue = total;
+    */
+    
+    for(int i =0;i<2;++i)
     {
-        int first = grid[i].cellValue;
-        int second = grid[i - GRIDWIDTH].cellValue;
-        int ans = Sum(first, second);
-        int t = Total(first, ans);
-        answerGrid[i-GRIDWIDTH*2].cellValue = t;
+    int cellHigh = answerGrid[
+        where -
+            i*GRIDWIDTH].cellValue;
+    int cellLow = answerGrid[
+        where -
+            (i+1)*GRIDWIDTH].cellValue;
+            
+    int ans = Sum(cellHigh, cellLow);
+    int total = Sum(cellLow, ans);
+    answerGrid[
+        where -
+            (i+2)*GRIDWIDTH].cellValue = total;
     }
 }
 
-void CGrid::InitDown(int column)
+void CGrid::InitDown(int where)
 {
+    answerGrid[20].cellValue = 
+        grid[20].cellValue;
+    answerGrid[14].cellValue =
+        grid[14].cellValue;
+    answerGrid[21].cellValue =
+        grid[21].cellValue;
+    answerGrid[15].cellValue =
+        grid[15].cellValue;
+        
+    for(int i=0;i<2;++i)
+    {
+    int cellHigh = answerGrid[
+        where +
+            i*GRIDWIDTH].cellValue;
+    int cellLow = answerGrid[
+        where +
+            (i+1)*GRIDWIDTH].cellValue;
+    
+    int ans = Sum(cellHigh, cellLow);
+    int total = Sum(cellLow, ans);
+    answerGrid[where +
+        (i+2)*GRIDWIDTH].cellValue = total;
+    }
 }
 
-void CGrid::InitLeft(int row)
+void CGrid::InitLeft(int where)
 {
+    answerGrid[20].cellValue = 
+        grid[20].cellValue;
+    answerGrid[14].cellValue =
+        grid[14].cellValue;
+    answerGrid[21].cellValue =
+        grid[21].cellValue;
+    answerGrid[15].cellValue =
+        grid[15].cellValue;
+        
+    for(int i=0;i<2;++i)
+    {
+        int cellHigh = answerGrid[where -
+            i].cellValue;
+        int cellLow = answerGrid[where -
+            i-1].cellValue;
+        
+        int ans = Sum(cellHigh, cellLow);
+        int total = Sum(cellLow, ans);
+        answerGrid[where -
+            i-2].cellValue = total;
+    }
 }
 
-void CGrid::InitRight(int row)
+void CGrid::InitRight(int where)
 {
+    answerGrid[20].cellValue = 
+        grid[20].cellValue;
+    answerGrid[14].cellValue =
+        grid[14].cellValue;
+    answerGrid[21].cellValue =
+        grid[21].cellValue;
+    answerGrid[15].cellValue =
+        grid[15].cellValue;
+        
+    for(int i=0;i<2;++i)
+    {
+        int cellHigh = answerGrid[where +
+            i].cellValue;
+        int cellLow = answerGrid[where +
+            i+1].cellValue;
+        
+        int ans = Sum(cellHigh, cellLow);
+        int total = Sum(cellLow, ans);
+        answerGrid[where + i+2].cellValue = total;
+    }
+}
+
+void CGrid::LoadAnswerGrid(SDL_Renderer* renderer)
+{
+    for(int i=0;i<36;++i)
+    {
+        Cell temp{};
+        answerGrid.push_back(temp);
+    }
+    InitUp(middleNumbers::LEFT_DOWN);
+    InitUp(middleNumbers::RIGHT_DOWN);
+    InitDown(middleNumbers::LEFT_UP);
+    InitDown(middleNumbers::RIGHT_UP);
+    InitLeft(middleNumbers::RIGHT_UP);
+    InitLeft(middleNumbers::RIGHT_DOWN);
+    InitRight(middleNumbers::LEFT_UP);
+    InitRight(middleNumbers::LEFT_DOWN);
+    
+    
+    for(int i = 0;i<answerGrid.size();++i)
+    {
+        std::string s =
+            std::to_string(answerGrid[i].cellValue);
+        answerGrid[i].cellValueTexture =
+            loadText(renderer, s.c_str());
+    }
 }
 
 void CGrid::LoadGrid(SDL_Renderer *
@@ -285,10 +405,6 @@ void CGrid::LoadGrid(SDL_Renderer *
             grid[i].cellValueLength = size;
             grid[i].cellValueTexture =
                 loadText(renderer, sz.c_str());
-            /*
-            grid[i].cellValueRect.x = zX;
-            grid[i].cellValueRect.y = zY;
-            */
             break;
         }
         default:
@@ -304,9 +420,9 @@ void CGrid::LoadGrid(SDL_Renderer *
         "imgs/blankred.png");
 }
 
-void CGrid::LoadAnswerGrid(SDL_Renderer* renderer)
+void CGame::HelpAnswerGrid()
 {
-    InitUp(2);
+    LoadAnswerGrid(renderer);
 }
 
 // CGrid needs CGame renderer
@@ -453,11 +569,11 @@ void CGame::PositionGrid(int offset)
 {
     for (int i = 0; i < grid.size(); ++i)
     {
-        //grid[i].x += gridArea + ( )
+        //grid[i].x += gridArea + ( ) ???
         grid[i].x = (i % 6) * CELLWIDTH + offset;
         grid[i].y = int(i / 6) * CELLWIDTH;
 
-        //the cellValues
+        //the cellValues as well
         grid[i].cellValueRect.x = grid[i].x;
         grid[i].cellValueRect.y = grid[i].y;
     }
@@ -777,8 +893,6 @@ void CGame::InputGame()
                         &keypad.keys
                         [namedKey::KEY_OK].keyRect))
                 {
-                    HelpPutGrid();
-                }
                 */
             }
             // here is the per touch update
@@ -793,10 +907,6 @@ void CGame::InputGame()
         case SDL_FINGERMOTION:
         {
             // cancel things
-            /*
-            there might be an error later
-            if we use an off screen key
-            */
             keypad.keyPressed =
                 namedKey::KEY_EMPTY;
             break;
@@ -855,6 +965,15 @@ void CGame::UpdateScreen()
             SDL_RenderCopy(
                 renderer,
                 grid[i].cellValueTexture,
+                NULL,
+                &grid[i].cellValueRect);
+        }
+        // testing ans
+         if (answerGrid[i].cellValueTexture != NULL)
+        {
+            SDL_RenderCopy(
+                renderer,
+                answerGrid[i].cellValueTexture,
                 NULL,
                 &grid[i].cellValueRect);
         }
