@@ -1,167 +1,229 @@
-#include <SDL2/SDL.h>
-
-#include <SDL2/SDL_ttf.h>
-
-#include <SDL2/SDL_image.h>
-
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_image.h"
+#include "SDL2/SDL_ttf.h"
+#include <vector>
 #include <iostream>
 
-class Game
-
+struct Cell : SDL_Rect
 {
+    SDL_Texture *cellTexture = nullptr;
+    SDL_Texture *cellValueTexture = nullptr;
+    SDL_Rect cellValueRect{120, 120, 110, 110};
+
+    int x = 0;
+    int y = 0;
+    int w = 120;
+    int h = 120;
+
+    int cellValue{0};
+    int cellValueLength{0};
+    unsigned int cellPos{0};
+    bool cellSelected{false};
+    bool cellMatch{false};
+};
+
+// forward declaration
+class CKey;
+struct Keypad
+{
+    std::vector<CKey> keys{};
+    SDL_Rect fullKeypadRect{0};
+    SDL_Texture *keyHighlight = nullptr;
+    int keyPressed{15};
+};
+
+struct Display
+{
+    const int TEXTWIDTH{55};
+    const int MAXDIGITS{6}; // includes '-'
+    const int MAXINPUT{5};
+    SDL_Texture *displayTexture = nullptr;
+    SDL_Rect numberDisplayRect{0};
+    SDL_Rect displayBorder{
+        0, 0,
+        TEXTWIDTH *MAXDIGITS, 100};
+
+    Uint8 lengthOfDisplay{1};
+    char myText[5]{'0'};
+    int myTextToInt{0};
+};
+
+enum State
+{
+    GAME_WAITING,
+    GAME_GRIDINPUT,
+    GAME_TYPING,
+};
+
+enum namedKey
+{
+    KEY_ONE = 0,
+    KEY_TWO,
+    KEY_THREE,
+    KEY_ZERO,
+    KEY_MINUS,
+    KEY_FOUR,
+    KEY_FIVE,
+    KEY_SIX,
+    KEY_AC,
+    KEY_PLUS,
+    KEY_SEVEN,
+    KEY_EIGHT,
+    KEY_NINE,
+    KEY_BACK,
+    KEY_OK,
+    KEY_EMPTY
+};
+
+enum middleNumbers
+{
+    LEFT_THREE_UP = 12,
+    LEFT_TWO_UP,
+    LEFT_UP,
+    RIGHT_UP,
+    RIGHT_TWO_UP,
+    RIGHT_THREE_UP,
+    LEFT_THREE_DOWN,
+    LEFT_TWO_DOWN,
+    LEFT_DOWN,
+    RIGHT_DOWN,
+    RIGHT_TWO_DOWN,
+    RIGHT_THREE_DOWN
+};
+
+class CGame;
+class CKey
+{
+  private:
+  public:
+    std::vector<std::string> files{};
+    SDL_Texture *keyTexture = nullptr;
+    SDL_Rect keyRect{
+        -120, -120,
+        120, 120};
+
+    SDL_Texture *debugText = nullptr;
+
+    bool keyDebug{false};
+
+    const Uint8 KEYWIDTH{120};
+    int value{0};
+    char kind{'8'};
+    unsigned char keypos{0};
+    // int keyPressed{14};
+    //bool keyPressed{false};
+
+    void LoadKeys(
+        SDL_Renderer *renderer,
+        SDL_Rect gridRect,
+        Keypad &keypad);
+    // either use a number
+    // or use a kind
+    void DoKey(unsigned int key);
+    void DoKey(char kind);
+};
+
+class CGrid
+{
+    // methods for filling answer
+    int Sum(int a, int b);
+    int Total(int a, int b);
+    void InitUp(int column);
+    void InitDown(int column);
+    void InitLeft(int row);
+    void InitRight(int row);
+    
+    void SetWXYZ();
+    // return position of error
+    int CheckGrid();
 
   public:
+    SDL_Rect gridArea{0};
+    SDL_Texture *selectTexture = nullptr;
+    std::vector<Cell> grid{};
+std::vector<Cell> answerGrid{};
 
-    Game()
+    bool gridDebug{false};
 
+    const Uint8 CELLWIDTH{120};
+    const Uint8 VALUEWIDTH{100};
+    const Uint8 GRIDWIDTH{6};
+    unsigned int selected{0};
+    int errorInt{-1};
+    
+    int w{1};
+    int x{2};
+    int y{3};
+    int z{4};
+
+    void LoadGrid(SDL_Renderer *renderer);
+    void LoadAnswerGrid(SDL_Renderer* renderer);
+    void SelectedCell(
+        SDL_Rect r, SDL_Rect g);
+    void PutGrid(
+        SDL_Renderer *renderer,
+        const Display display);
+
+    bool GridComplete();
+};
+
+class CGame : public CGrid, public CKey
+{
+  public:
+    CGame()
     {
-
+    }
+    ~CGame()
+    {
+        QuitGame();
     }
 
-    // all keypad keys
+    SDL_Event event{};
+    SDL_TouchFingerEvent f{};
+    SDL_Rect touch{1, 1, 1, 1};
+    SDL_Rect debugRect{720, 0, 40, 40};
 
-    SDL_Texture *key0 = nullptr;
+    bool gameDebug{false};
 
-    SDL_Texture *key0H = nullptr;
-
-    SDL_Texture *key0temp = nullptr;
-
-    SDL_Texture *key1 = nullptr;
-
-    SDL_Texture *key1H = nullptr;
-
-    SDL_Texture *key1temp = nullptr;
-
-    SDL_Texture *key2 = nullptr;
-
-    SDL_Texture *key2H = nullptr;
-
-    SDL_Texture *key2temp = nullptr;
-
-    SDL_Texture *key3 = nullptr;
-
-    SDL_Texture *key3H = nullptr;
-
-    SDL_Texture *key3temp = nullptr;
-
-    SDL_Texture *key4 = nullptr;
-
-    SDL_Texture *key4H = nullptr;
-
-    SDL_Texture *key4temp = nullptr;
-
-    SDL_Texture *key5 = nullptr;
-
-    SDL_Texture *key5H = nullptr;
-
-    SDL_Texture *key5temp = nullptr;
-
-    SDL_Texture *key6 = nullptr;
-
-    SDL_Texture *key6H = nullptr;
-
-    SDL_Texture *key6temp = nullptr;
-
-    SDL_Texture *key7 = nullptr;
-
-    SDL_Texture *key7H = nullptr;
-
-    SDL_Texture *key7temp = nullptr;
-
-    SDL_Texture *key8 = nullptr;
-
-    SDL_Texture *key8H = nullptr;
-
-    SDL_Texture *key8temp = nullptr;
-
-    SDL_Texture *key9= nullptr;
-
-    SDL_Texture *key9H = nullptr;
-
-    SDL_Texture *key9temp = nullptr;
-
-    SDL_Texture *keyback = nullptr;
-
-    SDL_Texture *keybackH = nullptr;
-
-    SDL_Texture *keybacktemp = nullptr;
-
-    SDL_Texture *keyok = nullptr;
-
-    SDL_Texture *keyokH = nullptr;
-
-    SDL_Texture *keyoktemp = nullptr;
-
-    SDL_Texture *textTexture = nullptr;
-
-    SDL_Window *window = nullptr;
-
-    SDL_Renderer *renderer = nullptr;
-
-    int screenWidth{0};
-
-    int screenHeight{0};
-
-    SDL_bool isLooping{SDL_TRUE};
-
-    SDL_Rect touch{};
-
-    SDL_Rect quit{};
-
-    SDL_Rect input{};
-
-    // keypad
-
-    SDL_Rect key0Rect{0};
-
-    SDL_Rect key1Rect{0};
-
-    SDL_Rect key2Rect{0};
-
-    SDL_Rect key3Rect{0};
-
-    SDL_Rect key4Rect{0};
-
-    SDL_Rect key5Rect{0};
-
-    SDL_Rect key6Rect{0};
-
-    SDL_Rect key7Rect{0};
-
-    SDL_Rect key8Rect{0};
-
-    SDL_Rect key9Rect{0};
-
-    SDL_Rect keybackRect{0};
-
-    SDL_Rect keyokRect{0};
-
-    char myText[7] = {'\0'};
-
-    SDL_Texture *loadImage(SDL_Renderer *renderer, const char *path);
-
-    SDL_Texture *loadText(SDL_Renderer *renderer, const char *text);
+    Keypad keypad{};
+    Display display{};
 
     int InitSDL();
+    int Run();
 
-    void QuitSDL();
+    //===============
+    //Helpers
+    //void HelpGridLoad(SDL_Renderer *renderer);
+    void HelpGridLoad();
+    void HelpPutGrid();
+    void HelpGridDisplay();
+    void HelpKeypadLoad(
+        SDL_Renderer *renderer,
+        SDL_Rect rect,
+        Keypad &keypad);
+    void HelpKeypadDisplay();
+    void HelpDisplayLoad();
+    void HelpDisplayDisplay();
+    void HelpAnswerGrid();
+    //===============
+  private:
+    SDL_Window *window = NULL;
+    SDL_Renderer *renderer = NULL;
 
-    void deleteGFX();
+    bool loopgame = true;
+    int screenWidth{0};
+    int screenHeight{0};
 
-    void loadRect();
+    void InputGame();
+    void UpdateScreen();
 
-    void gameLoop();
+    void HandleUI();
+    void PositionGrid(int offset);
+    void TouchingGrid();
+    void TouchingKey(int i);
 
-    void validateInput();
+    void QuitGame();
 
-    void highlightKey(SDL_Texture *keyTexture);
-
-    void unhighlightKey(
-
-        SDL_Texture *keyTexture);
-
-    void displayText();
-
-    void MakeGrid(int sw, int sh);
-
+    int GetOrientation();
+    int GetScreenSize();
 };
