@@ -38,7 +38,8 @@ struct Display
     const int MAXDIGITS{6}; // includes '-'
     const int MAXINPUT{5};
     SDL_Texture *displayTexture = nullptr;
-    SDL_Rect numberDisplayRect{0};
+    SDL_Rect numberDisplayRect{
+        0,0,TEXTWIDTH*MAXDIGITS, 100};
     SDL_Rect displayBorder{
         0, 0,
         TEXTWIDTH *MAXDIGITS, 100};
@@ -106,13 +107,15 @@ class CKey
 
     bool keyDebug{false};
 
-    const Uint8 KEYWIDTH{120};
+    Uint8 keyWidth{120};
     int value{0};
     char kind{'8'};
     unsigned char keypos{0};
     // int keyPressed{14};
     //bool keyPressed{false};
 
+    void GrabKeySize(int sw);
+    
     void LoadKeys(
         SDL_Renderer *renderer,
         SDL_Rect gridRect,
@@ -136,6 +139,8 @@ class CGrid
     void SetWXYZ();
     // return position of error
     int CheckGrid();
+    
+    
 
   public:
     SDL_Rect gridArea{0};
@@ -144,10 +149,16 @@ class CGrid
 std::vector<Cell> answerGrid{};
 
     bool gridDebug{false};
-
+/*
     const Uint8 CELLWIDTH{120};
     const Uint8 VALUEWIDTH{100};
     const Uint8 GRIDWIDTH{6};
+*/
+    // make the grid run on any resolution
+    Uint8 cellWidth{120};
+    Uint8 valueWidth{100};
+    Uint8 gridColumns{6};
+    
     unsigned int selected{0};
     int errorInt{-1};
     
@@ -155,9 +166,12 @@ std::vector<Cell> answerGrid{};
     int x{2};
     int y{3};
     int z{4};
+    
+    void GrabGridSize(int sw);
 
     void LoadGrid(SDL_Renderer *renderer);
     void LoadAnswerGrid(SDL_Renderer* renderer);
+    
     void SelectedCell(
         SDL_Rect r, SDL_Rect g);
     void PutGrid(
@@ -193,19 +207,28 @@ class CGame : public CGrid, public CKey
 
     //===============
     //Helpers
-    //void HelpGridLoad(SDL_Renderer *renderer);
+    
+    // if CGame created a grid - would we
+    // need these?
     void HelpGridLoad();
-    void HelpPutGrid();
-    void HelpGridDisplay();
+    void HelpDisplayLoad();
     void HelpKeypadLoad(
         SDL_Renderer *renderer,
         SDL_Rect rect,
         Keypad &keypad);
+        
+    // transfer screen
+    void SendSize();
+        
+    // render stuff
+    void HelpGridDisplay();
     void HelpKeypadDisplay();
-    void HelpDisplayLoad();
     void HelpDisplayDisplay();
+    
+    void HelpPutGrid();
     void HelpAnswerGrid();
     //===============
+    
   private:
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
@@ -224,6 +247,6 @@ class CGame : public CGrid, public CKey
 
     void QuitGame();
 
-    int GetOrientation();
-    int GetScreenSize();
+    int GetOrientationAndSize();
+    //int GetScreenSize();
 };
