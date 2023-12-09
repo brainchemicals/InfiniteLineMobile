@@ -358,7 +358,10 @@ void CGrid::LoadGrid(SDL_Renderer *
         // cells are square
         tempCell.w = cellWidth;
         tempCell.h = cellWidth;
+        tempCell.cellValueRect.w = cellWidth -10;
+        tempCell.cellValueRect.h = cellWidth - 10;
         
+        // id
         tempCell.cellPos = i;
         tempCell.cellTexture = loadImage(
             renderer, "imgs/blankwhite.png");
@@ -656,6 +659,7 @@ void CGame::PositionGrid(int offset)
         grid[i].y = int(i / 6) * cellWidth;
 
         //the cellValues as well
+        // in LoadGrid we shrink there w,h
         grid[i].cellValueRect.x = grid[i].x+5;
         grid[i].cellValueRect.y = grid[i].y+5;
     }
@@ -1011,7 +1015,11 @@ void CGame::HandleUI()
         
     display.numberDisplayRect.h = 100;
         
-
+    //
+    // colourful indicators
+    //
+    
+    
     //
     // keys
     //
@@ -1030,9 +1038,9 @@ void CGame::HandleUI()
     Uint8 keyRows = 3;
     
     keypad.fullKeypadRect.w =
-        keypad.keys[0].keyWidth * keyColumns;
+        keypad.keys[0].keyRect.w * keyColumns;
     keypad.fullKeypadRect.h =
-        keypad.keys[0].keyWidth * keyRows;
+        keypad.keys[0].keyRect.h * keyRows;
 
     // place keys on keypad
     for (int i = 0; i < files.size(); ++i)
@@ -1204,7 +1212,6 @@ void CGame::UpdateScreen()
         //
         // match answer
         //
-        
         if(grid[i].cellMatch)
         {
             SDL_SetRenderDrawColor(
