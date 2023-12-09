@@ -156,6 +156,11 @@ int CGame::InitSDL()
 
 int CGame::Run()
 {
+    // get dimensions
+    // for everything on screen
+    GetOrientationAndSize();
+    SendSize();
+    
     // load gfx
     HelpGridLoad();
     HelpKeypadLoad(
@@ -163,9 +168,6 @@ int CGame::Run()
         keypad.fullKeypadRect,
         keypad);
     HelpAnswerGrid();
-
-    //bump UI(?) and get a display
-    GetOrientation();
     HelpDisplayDisplay();
 
     while (loopgame)
@@ -199,16 +201,6 @@ int CGrid::Total(int a, int b)
 void CGrid::InitUp(int where)
 {
     /*
-    answerGrid[20].cellValue =
-        grid[20].cellValue;
-    answerGrid[14].cellValue =
-        grid[14].cellValue;
-    answerGrid[21].cellValue =
-        grid[21].cellValue;
-    answerGrid[15].cellValue =
-        grid[15].cellValue;
-*/
-    /*
     int cellHigh = answerGrid[20].cellValue;
     int cellLow = answerGrid[14].cellValue;
     int ans = Sum(cellHigh, cellLow);
@@ -221,65 +213,47 @@ void CGrid::InitUp(int where)
     total = Sum(cellLow, ans);
     answerGrid[2].cellValue = total;
     */
+    
+    // loop instead
 
     for (int i = 0; i < 2; ++i)
     {
         int cellHigh = answerGrid[where -
-                                  i * GRIDWIDTH]
+                                  i * gridColumns]
                            .cellValue;
         int cellLow = answerGrid[where -
-                                 (i + 1) * GRIDWIDTH]
+                                 (i + 1) * gridColumns]
                           .cellValue;
 
         int ans = Sum(cellHigh, cellLow);
         int total = Sum(cellLow, ans);
         answerGrid[where -
-                   (i + 2) * GRIDWIDTH]
+                   (i + 2) * gridColumns]
             .cellValue = total;
     }
 }
 
 void CGrid::InitDown(int where)
 {
-    /*
-    answerGrid[20].cellValue =
-        grid[20].cellValue;
-    answerGrid[14].cellValue =
-        grid[14].cellValue;
-    answerGrid[21].cellValue =
-        grid[21].cellValue;
-    answerGrid[15].cellValue =
-        grid[15].cellValue;
-*/
     for (int i = 0; i < 2; ++i)
     {
         int cellHigh = answerGrid[where +
-                                  i * GRIDWIDTH]
+                                  i * gridColumns]
                            .cellValue;
         int cellLow = answerGrid[where +
-                                 (i + 1) * GRIDWIDTH]
+                                 (i + 1) * gridColumns]
                           .cellValue;
 
         int ans = Sum(cellHigh, cellLow);
         int total = Sum(cellLow, ans);
         answerGrid[where +
-                   (i + 2) * GRIDWIDTH]
+                   (i + 2) * gridColumns]
             .cellValue = total;
     }
 }
 
 void CGrid::InitLeft(int where)
 {
-    /*
-    answerGrid[20].cellValue =
-        grid[20].cellValue;
-    answerGrid[14].cellValue =
-        grid[14].cellValue;
-    answerGrid[21].cellValue =
-        grid[21].cellValue;
-    answerGrid[15].cellValue =
-        grid[15].cellValue;
-*/
     for (int i = 0; i < 2; ++i)
     {
         int cellHigh = answerGrid[where -
@@ -299,16 +273,6 @@ void CGrid::InitLeft(int where)
 
 void CGrid::InitRight(int where)
 {
-    /*
-    answerGrid[20].cellValue =
-        grid[20].cellValue;
-    answerGrid[14].cellValue =
-        grid[14].cellValue;
-    answerGrid[21].cellValue =
-        grid[21].cellValue;
-    answerGrid[15].cellValue =
-        grid[15].cellValue;
-*/
     for (int i = 0; i < 2; ++i)
     {
         int cellHigh = answerGrid[where +
@@ -377,33 +341,16 @@ void CGrid::LoadAnswerGrid(SDL_Renderer *renderer)
     */
 }
 
-void CGrid::SetWXYZ()
+void CGame::HelpAnswerGrid()
 {
-    int high = 30;
-    w = (rand() % high);
-    x = rand() % high;
-    y = rand() % high;
-    z = rand() % high;
-}
-
-int CGrid::CheckGrid()
-{
-    for(int i=0;i<grid.size();++i)
-    {
-        if(grid[i].cellValue == answerGrid[i].cellValue)
-        {
-            grid[i].cellMatch = true;
-        }
-        else
-        {
-            return i;
-        }
-    }
+    LoadAnswerGrid(renderer);
 }
 
 void CGrid::LoadGrid(SDL_Renderer *
                          renderer)
 {
+    // as the grid depends on the phone size
+    
     for (int i = 0; i < 36; ++i)
     {
         Cell tempCell{};
@@ -489,26 +436,13 @@ void CGrid::LoadGrid(SDL_Renderer *
 
     selectTexture = loadImage(
         renderer,
-        "imgs/blankred.png");
-}
-
-void CGame::HelpAnswerGrid()
-{
-    LoadAnswerGrid(renderer);
+        "imgs/blankblue.png");
 }
 
 // CGrid needs CGame renderer
 void CGame::HelpGridLoad()
 {
     LoadGrid(renderer);
-}
-
-void CGame::HelpKeypadLoad(
-    SDL_Renderer *renderer,
-    SDL_Rect rect,
-    Keypad &keypad)
-{
-    LoadKeys(renderer, rect, keypad);
 }
 
 void CKey::LoadKeys(
@@ -538,8 +472,8 @@ void CKey::LoadKeys(
     for (int i = 0; i < files.size(); ++i)
     {
         CKey key{};
-        key.keyRect.w = KEYWIDTH;
-        key.keyRect.h = KEYWIDTH;
+        key.keyRect.w = keyWidth;
+        key.keyRect.h = keyWidth;
         key.keypos = i;
 
         std::string s = "imgs/";
@@ -594,6 +528,38 @@ void CKey::LoadKeys(
     keypad.keys[15].value = -1;
 }
 
+void CGame::HelpKeypadLoad(
+    SDL_Renderer *renderer,
+    SDL_Rect rect,
+    Keypad &keypad)
+{
+    LoadKeys(renderer, rect, keypad);
+}
+
+void CGrid::SetWXYZ()
+{
+    int high = 30;
+    w = (rand() % high);
+    x = rand() % high;
+    y = rand() % high;
+    z = rand() % high;
+}
+
+int CGrid::CheckGrid()
+{
+    for(int i=0;i<grid.size();++i)
+    {
+        if(grid[i].cellValue == answerGrid[i].cellValue)
+        {
+            grid[i].cellMatch = true;
+        }
+        else
+        {
+            return i;
+        }
+    }
+}
+
 void CGrid::PutGrid(
     SDL_Renderer *renderer,
     const Display display)
@@ -623,6 +589,12 @@ void CGrid::PutGrid(
     CheckGrid();
 }
 
+// our answer is a fairly important decision
+void CGame::HelpPutGrid()
+{
+    PutGrid(renderer, display);
+}
+
 // match the grid coordinates
 // grid left 0,0 - touch 0,0
 // grid top 0,0 - touch 0,0
@@ -630,9 +602,19 @@ void CGrid::PutGrid(
 void CGrid::SelectedCell(
     SDL_Rect touch, SDL_Rect grid)
 {
+    // i think grid.x is actually the w,x,y,z values
+    /*
     int cellX = int((touch.x - grid.x) / CELLWIDTH);
     int cellY = int((touch.y - grid.y) / CELLWIDTH);
-    int valid = (GRIDWIDTH * cellY) + cellX;
+    */
+    
+    // plus gridArea.x as layouts 0 and 2
+    // will be at 0,0
+    // layout 1 will be at 820,0
+    int cellX = int((touch.x - gridArea.x) / cellWidth);
+    int cellY = int(touch.y /cellWidth);
+    
+    int valid = (gridColumns * cellY) + cellX;
     switch (valid)
     {
     case 14:
@@ -645,7 +627,7 @@ void CGrid::SelectedCell(
     }
     default:
     {
-        selected = (GRIDWIDTH * cellY) + cellX;
+        selected = (gridColumns * cellY) + cellX;
     }
     }
 }
@@ -662,8 +644,11 @@ void CGame::PositionGrid(int offset)
     for (int i = 0; i < grid.size(); ++i)
     {
         //grid[i].x += gridArea + ( ) ???
-        grid[i].x = (i % 6) * CELLWIDTH + offset;
-        grid[i].y = int(i / 6) * CELLWIDTH;
+        
+        // offset because in portrait or landscape
+        // only x changes
+        grid[i].x = (i % 6) * cellWidth + offset;
+        grid[i].y = int(i / 6) * cellWidth;
 
         //the cellValues as well
         grid[i].cellValueRect.x = grid[i].x+5;
@@ -711,10 +696,21 @@ void CGame::HelpDisplayDisplay()
     }
 }
 
-// our answer is a fairly important decision
-void CGame::HelpPutGrid()
+void CKey::GrabKeySize(int sw)
 {
-    PutGrid(renderer, display);
+    keyWidth = int(sw / 6);
+}
+
+void CGrid::GrabGridSize(int sw)
+{
+    cellWidth = int(sw / gridColumns);
+    valueWidth = cellWidth - 10;
+}
+
+void CGame::SendSize()
+{
+    GrabGridSize(screenWidth);
+    GrabKeySize(screenWidth);
 }
 
 // every time SDL_FINGERDOWN
@@ -805,6 +801,8 @@ void CGame::TouchingKey(int i)
 
 // a rects x is always along the usual x axis
 // and matches the screen width and height
+
+/*
 void CGame::HandleUI()
 {
     // the left over screen space not grid
@@ -894,9 +892,147 @@ void CGame::HandleUI()
             whatY;
     }
 }
+*/
+
+// grab the screen info
+// then we can lay components
+// if phone rotated
+void CGame::HandleUI()
+{
+    int layout = GetOrientationAndSize();
+    
+    // the left over screen space not grid
+    int startXtraSpace{0};
+    int endXtraSpace{0};
+    int startYtraSpace{0};
+    int endYtraSpace{0};
+    
+    // nicely place the grid
+    int gridXpos{0};
+    int buffer{60};
+    // better looking alignment
+    const int keyRatio = int(720 / 6);
+    const int keyHalf = int(720 / 12);
+
+    switch (layout)
+    {
+    case 0:
+    {
+        startYtraSpace = gridColumns * cellWidth;
+        endYtraSpace = screenHeight;
+        
+        startXtraSpace = 0;
+        endXtraSpace = screenWidth;
+        
+        gridXpos = 0;
+        break;
+    }
+    case 1:
+    {
+        gridXpos = screenWidth - gridColumns * cellWidth - buffer;
+        
+        startXtraSpace = 0;
+        endXtraSpace = screenWidth - gridColumns * cellWidth - buffer;
+        
+        startYtraSpace = 0;
+        endYtraSpace = screenHeight;
+        break;
+    }
+    case 2:
+    {
+        //gridXpos += buffer;
+        gridXpos = 0 + buffer;
+        
+        startXtraSpace = gridColumns * cellWidth + buffer;
+        endXtraSpace = screenWidth;
+        
+        startYtraSpace = 0;
+        endYtraSpace = screenHeight;
+        break;
+    }
+    // something went wrong
+    default:
+    {
+        gameDebug = true;
+        gridXpos = -360;
+        break;
+    }
+    }
+
+    gridArea.x = gridXpos;
+    gridArea.y = 0;
+    gridArea.w = gridColumns * cellWidth;
+    gridArea.h = gridColumns * cellWidth;
+
+    // move cells along with total grid area
+    PositionGrid(gridXpos);
+
+    //
+    // display
+    //
+    /*
+    display.numberDisplayRect.x =
+        squareXSpace + keyRatio;
+    display.numberDisplayRect.y =
+        squareYSpace + keyRatio;
+    display.numberDisplayRect.w =
+        display.TEXTWIDTH * 6;
+    display.numberDisplayRect.h = 100;
+    */
+    
+    //
+    // display
+    //
+    //========== border =======
+    display.displayBorder.x =
+        (endXtraSpace+startXtraSpace) / 2 -
+            (display.TEXTWIDTH * 
+                display.MAXDIGITS) / 2;
+                
+    display.displayBorder.y = startYtraSpace + buffer;
+    //=============
+
+    display.numberDisplayRect.x =
+        display.displayBorder.x +
+            display.displayBorder.w / 2 -
+            (display.lengthOfDisplay *
+                (display.TEXTWIDTH / 2));
+    
+    display.numberDisplayRect.y =
+        display.displayBorder.y;
+
+    display.numberDisplayRect.w =
+        display.TEXTWIDTH * display.lengthOfDisplay;
+        
+    display.numberDisplayRect.h = 100;
+        
+
+    //
+    // keys
+    //
+    keypad.fullKeypadRect.x =
+        startXtraSpace;
+    keypad.fullKeypadRect.y =
+        startYtraSpace + keyRatio * 2;
+    keypad.fullKeypadRect.w = 600;
+    keypad.fullKeypadRect.h = 360;
+
+    // place keys on keypad
+    for (int i = 0; i < files.size(); ++i)
+    {
+        int whatX = int(i % 5) * keyWidth;
+        keypad.keys[i].keyRect.x =
+            keypad.fullKeypadRect.x +
+            whatX;
+        int whatY = int(i / 5) * keyWidth;
+        keypad.keys[i].keyRect.y =
+            keypad.fullKeypadRect.y +
+            whatY;
+    }
+}
 
 // return what phone rotation is
-int CGame::GetOrientation()
+int CGame::GetOrientationAndSize()
 {
     int ans{0};
     // we can adjust keypad bottom,
@@ -1075,6 +1211,7 @@ void CGame::UpdateScreen()
                 NULL,
                 &grid[i].cellValueRect);
         }
+        
         // testing ans
         /*
         if (answerGrid[i].cellValueTexture != NULL)
@@ -1087,18 +1224,12 @@ void CGame::UpdateScreen()
         }
         */
     }
+    
     //
     // display
     //
-    // ========== border =======
-    display.displayBorder.x =
-        (screenWidth / 2) -
-        ((display.TEXTWIDTH *
-          display.MAXDIGITS) /
-         2);
-    display.displayBorder.y =
-        display.numberDisplayRect.y;
-
+    //
+    // ===== border ========
     SDL_SetRenderDrawColor(renderer,
                            200, 200, 250, 255);
     SDL_RenderDrawRect(renderer,
@@ -1121,6 +1252,7 @@ void CGame::UpdateScreen()
     //
     // keypad
     //
+    // test we cover up the blue test area
     SDL_SetRenderDrawColor(renderer,
                            50, 150, 50, 255);
     SDL_RenderFillRect(renderer,
