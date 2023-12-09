@@ -354,6 +354,11 @@ void CGrid::LoadGrid(SDL_Renderer *
     for (int i = 0; i < 36; ++i)
     {
         Cell tempCell{};
+        // temp alter for phone sizes
+        // cells are square
+        tempCell.w = cellWidth;
+        tempCell.h = cellWidth;
+        
         tempCell.cellPos = i;
         tempCell.cellTexture = loadImage(
             renderer, "imgs/blankwhite.png");
@@ -1014,8 +1019,20 @@ void CGame::HandleUI()
         startXtraSpace;
     keypad.fullKeypadRect.y =
         startYtraSpace + keyRatio * 2;
+        /*
     keypad.fullKeypadRect.w = 600;
     keypad.fullKeypadRect.h = 360;
+    */
+    
+    // temp values
+    // keys[0] will be same as all keys
+    Uint8 keyColumns = 5;
+    Uint8 keyRows = 3;
+    
+    keypad.fullKeypadRect.w =
+        keypad.keys[0].keyWidth * keyColumns;
+    keypad.fullKeypadRect.h =
+        keypad.keys[0].keyWidth * keyRows;
 
     // place keys on keypad
     for (int i = 0; i < files.size(); ++i)
