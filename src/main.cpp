@@ -17,6 +17,8 @@ Copyright 2023 Kevin "thenewkgb" Barnard
 *************/
    
    
+   
+   
 /*
 name: Infinite Line
 description: number puzzle containing four
@@ -35,14 +37,13 @@ towards the top of the phone in
 either landscape mode
 
 this version can handle a keypress
-and moving a finger due with
+and a moving a finger due with
 different TOUCHDOWN and TOUCHUP
-positions
+TOUCHMOTION
 
 work in progress
-only portrait mode works
-and resolutions other than 720 width
-will cause problems
+bugs?
+probably a lot
 */
 
 #include "game.hpp"
