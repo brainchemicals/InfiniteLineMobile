@@ -49,6 +49,7 @@ struct Display
     int myTextToInt{0};
 };
 
+// not implemented
 enum State
 {
     GAME_WAITING,
@@ -76,6 +77,7 @@ enum namedKey
     KEY_EMPTY
 };
 
+// counting 0 to 35 for a 6x6 grid
 enum middleNumbers
 {
     LEFT_THREE_UP = 12,
@@ -122,6 +124,7 @@ class CKey
         Keypad &keypad);
     // either use a number
     // or use a kind
+    // in the end not used
     void DoKey(unsigned int key);
     void DoKey(char kind);
 };
@@ -155,9 +158,9 @@ std::vector<Cell> answerGrid{};
     const Uint8 GRIDWIDTH{6};
 */
     // make the grid run on any resolution
-    Uint8 cellWidth{120};
-    Uint8 valueWidth{100};
-    Uint8 gridColumns{6};
+    Uint16 cellWidth{120};
+    Uint16 valueWidth{100};
+    Uint16 gridColumns{6};
     
     unsigned int selected{0};
     int errorInt{-1};
@@ -195,8 +198,8 @@ class CGame : public CGrid, public CKey
     SDL_Event event{};
     SDL_TouchFingerEvent f{};
     SDL_Rect touch{1, 1, 1, 1};
+    
     SDL_Rect debugRect{720, 0, 40, 40};
-
     bool gameDebug{false};
 
     Keypad keypad{};
@@ -207,9 +210,7 @@ class CGame : public CGrid, public CKey
 
     //===============
     //Helpers
-    
-    // if CGame created a grid - would we
-    // need these?
+    //===============
     void HelpGridLoad();
     void HelpDisplayLoad();
     void HelpKeypadLoad(
@@ -217,16 +218,16 @@ class CGame : public CGrid, public CKey
         SDL_Rect rect,
         Keypad &keypad);
         
-    // transfer screen
-    void SendSize();
-        
-    // render stuff
+    // passing renderer
     void HelpGridDisplay();
     void HelpKeypadDisplay();
     void HelpDisplayDisplay();
     
     void HelpPutGrid();
     void HelpAnswerGrid();
+    // transfer screen
+    void SendSize();
+        
     //===============
     
   private:
@@ -236,6 +237,7 @@ class CGame : public CGrid, public CKey
     bool loopgame = true;
     int screenWidth{0};
     int screenHeight{0};
+    int displayRatio{0};
 
     void InputGame();
     void UpdateScreen();
