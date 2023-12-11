@@ -710,7 +710,10 @@ void CGame::HelpDisplayDisplay()
 
 void CKey::GrabKeySize(int sw)
 {
+    // too many duplicate vars
     keyWidth = int(sw / 6);
+    keyRect.w = int(sw / 6);
+    keyRect.h = int(sw / 6);
 }
 
 void CGrid::GrabGridSize(int sw)
