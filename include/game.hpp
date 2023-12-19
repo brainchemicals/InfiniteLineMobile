@@ -4,57 +4,15 @@
 #include <vector>
 #include <iostream>
 
-struct Cell : SDL_Rect
-{
-    SDL_Texture *cellTexture = nullptr;
-    SDL_Texture *cellValueTexture = nullptr;
-    SDL_Rect cellValueRect{120, 120, 110, 110};
-
-    int x = 0;
-    int y = 0;
-    int w = 120;
-    int h = 120;
-
-    int cellValue{0};
-    int cellValueLength{0};
-    unsigned int cellPos{0};
-    bool cellSelected{false};
-    bool cellMatch{false};
-};
-
-// forward declaration
-class CKey;
-struct Keypad
-{
-    std::vector<CKey> keys{};
-    SDL_Rect fullKeypadRect{0};
-    SDL_Texture *keyHighlight = nullptr;
-    int keyPressed{15};
-};
-
-struct Display
-{
-    const int TEXTWIDTH{55};
-    const int MAXDIGITS{6}; // includes '-'
-    const int MAXINPUT{5};
-    SDL_Texture *displayTexture = nullptr;
-    SDL_Rect numberDisplayRect{
-        0,0,TEXTWIDTH*MAXDIGITS, 100};
-    SDL_Rect displayBorder{
-        0, 0,
-        TEXTWIDTH *MAXDIGITS, 100};
-
-    Uint8 lengthOfDisplay{1};
-    char myText[5]{'0'};
-    int myTextToInt{0};
-};
-
-// not implemented
 enum State
 {
-    GAME_WAITING,
-    GAME_GRIDINPUT,
-    GAME_TYPING,
+    //GAME_WAITING,
+    //GAME_GRIDINPUT,
+    //GAME_TYPING,
+    // using these
+    GAME_MENU,
+    GAME_RUNNING,
+    GAME_QUIT
 };
 
 enum namedKey
@@ -94,10 +52,59 @@ enum middleNumbers
     RIGHT_THREE_DOWN
 };
 
+struct Cell : SDL_Rect
+{
+    SDL_Texture *cellTexture = nullptr;
+    SDL_Texture *cellValueTexture = nullptr;
+    SDL_Rect cellValueRect{120, 120, 110, 110};
+
+    int x = 0;
+    int y = 0;
+    int w = 120;
+    int h = 120;
+
+    int cellValue{0};
+    int cellValueLength{0};
+    unsigned int cellPos{0};
+    bool cellSelected{false};
+    bool cellMatch{false};
+};
+
+// forward declaration
+class CKey;
+struct Keypad
+{
+    const Uint8 KEYCOLUMNS{5};
+    const Uint8 KEYROWS{3};
+    std::vector<CKey> keys{};
+    SDL_Rect fullKeypadRect{0};
+    SDL_Texture *keyHighlight = nullptr;
+    int keyPressed{15};
+};
+
+struct Display
+{
+    const int TEXTWIDTH{55};
+    const int MAXDIGITS{6}; // includes '-'
+    const int MAXINPUT{5};
+    SDL_Texture *displayTexture = nullptr;
+    SDL_Rect numberDisplayRect{
+        0,0,TEXTWIDTH*MAXDIGITS, 100};
+    SDL_Rect displayBorder{
+        0, 0,
+        TEXTWIDTH *MAXDIGITS, 100};
+
+    Uint8 lengthOfDisplay{1};
+    char myText[5]{'0'};
+    int myTextToInt{0};
+};
+
 class CGame;
 class CKey
 {
   private:
+  
+  
   public:
     std::vector<std::string> files{};
     SDL_Texture *keyTexture = nullptr;
@@ -109,7 +116,7 @@ class CKey
 
     bool keyDebug{false};
 
-    Uint8 keyWidth{120};
+    int keyWidth{120};
     int value{0};
     char kind{'8'};
     unsigned char keypos{0};
@@ -131,6 +138,8 @@ class CKey
 
 class CGrid
 {
+    private:
+    
     // methods for filling answer
     int Sum(int a, int b);
     int Total(int a, int b);
@@ -152,19 +161,20 @@ class CGrid
 std::vector<Cell> answerGrid{};
 
     bool gridDebug{false};
-/*
-    const Uint8 CELLWIDTH{120};
-    const Uint8 VALUEWIDTH{100};
-    const Uint8 GRIDWIDTH{6};
-*/
+    SDL_Rect restOfScreen{};
+
+    const Uint8 GRIDCOLUMNS{6};
+
     // make the grid run on any resolution
-    Uint16 cellWidth{120};
-    Uint16 valueWidth{100};
-    Uint16 gridColumns{6};
+    
+    int cellWidth{120};
+    int valueWidth{100};
+    
     
     unsigned int selected{0};
     int errorInt{-1};
     
+    int high{0};
     int w{1};
     int x{2};
     int y{3};
@@ -182,6 +192,13 @@ std::vector<Cell> answerGrid{};
         const Display display);
 
     bool GridComplete();
+};
+
+class Menu
+{
+    public:
+    SDL_Texture *tMenuPortrait = nullptr;
+    SDL_Texture *tMenuLandscape = nullptr;
 };
 
 class CGame : public CGrid, public CKey
@@ -204,9 +221,12 @@ class CGame : public CGrid, public CKey
 
     Keypad keypad{};
     Display display{};
+    Menu menu{};
+    State gameState{};
 
     int InitSDL();
-    int Run();
+    void Run();
+    void QuitGame();
 
     //===============
     //Helpers
@@ -225,30 +245,34 @@ class CGame : public CGrid, public CKey
     
     void HelpPutGrid();
     void HelpAnswerGrid();
-    // transfer screen
+    //==========
+    
     void SendSize();
-        
-    //===============
     
   private:
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
+    SDL_Rect menuButton{0,0,120,120};
+    
+    std::vector<int> gridLayoutX{};
+    std::vector<int> gridLayoutY{};
 
     bool loopgame = true;
     int screenWidth{0};
     int screenHeight{0};
     int displayRatio{0};
+    
+    void LoadMenu();
 
     void InputGame();
+    char InputMenu();
     void UpdateScreen();
+    void UpdateMenu();
 
     void HandleUI();
     void PositionGrid(int offset);
     void TouchingGrid();
     void TouchingKey(int i);
 
-    void QuitGame();
-
     int GetOrientationAndSize();
-    //int GetScreenSize();
 };

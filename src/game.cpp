@@ -35,10 +35,9 @@ SDL_Texture *loadText(SDL_Renderer *renderer, const char *text)
 
         return NULL;
     }
-    /*
-    TTF_Font *font = TTF_OpenFont("/system/fonts/Roboto-Regular.ttf", 256);
-    */
-    TTF_Font *font = TTF_OpenFont("/system/fonts/SourceSansPro-Regular.ttf", 256);
+    
+    TTF_Font *font = TTF_OpenFont("/system/fonts/NotoSerif-Regular.ttf", 256);
+    
     if (font == NULL)
     {
         std::string db = "loadText Error: TTF_OpenFont Error";
