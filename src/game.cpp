@@ -38,7 +38,7 @@ SDL_Texture *loadText(SDL_Renderer *renderer, const char *text)
     /*
     TTF_Font *font = TTF_OpenFont("/system/fonts/Roboto-Regular.ttf", 256);
     */
-    TTF_Font *font = TTF_OpenFont("/system/fonts/SourceSansPro-Regular.ttf", 256);
+    TTF_Font *font = TTF_OpenFont("/system/fonts/AndroidClock.ttf", 256);
     if (font == NULL)
     {
         std::string db = "loadText Error: TTF_OpenFont Error";
