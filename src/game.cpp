@@ -35,9 +35,9 @@ SDL_Texture *loadText(SDL_Renderer *renderer, const char *text)
 
         return NULL;
     }
-    
+
     TTF_Font *font = TTF_OpenFont("/system/fonts/NotoSerif-Regular.ttf", 256);
-    
+
     if (font == NULL)
     {
         std::string db = "loadText Error: TTF_OpenFont Error";
@@ -170,9 +170,7 @@ void CGame::Run()
     gameState = State::GAME_MENU;
 
     // get dimensions
-    // for everything on screen
-    GetOrientationAndSize();
-    SendSize();
+    HandleUI();
     LoadMenu();
 
     while (loopgame)
@@ -221,7 +219,7 @@ void CGame::Run()
         case GAME_RUNNING:
         {
             HandleUI();
-           // InputGame();
+            InputGame();
             UpdateScreen();
             break;
         }
@@ -400,13 +398,17 @@ void CGame::HelpAnswerGrid()
 
 void CGame::LoadMenu()
 {
-    menu.tMenuPortrait = loadImage(
-            renderer,
-            "imgs/tutorial.png");
+    menu.tMenuButton = loadImage(
+        renderer,
+        "imgs/menu_button.png");
 
-        menu.tMenuLandscape = loadImage(
-            renderer,
-            "imgs/tutorial_wide.png");
+    menu.tMenuPortrait = loadImage(
+        renderer,
+        "imgs/tutorial.png");
+
+    menu.tMenuLandscape = loadImage(
+        renderer,
+        "imgs/tutorial_wide.png");
 }
 
 void CGrid::LoadGrid(SDL_Renderer *
@@ -415,13 +417,6 @@ void CGrid::LoadGrid(SDL_Renderer *
     for (int i = 0; i < 36; ++i)
     {
         Cell tempCell{};
-        // cellWidth to alter for phone sizes
-        // cells are square
-        tempCell.w = cellWidth;
-        tempCell.h = cellWidth;
-        tempCell.cellValueRect.w = cellWidth - 10;
-        tempCell.cellValueRect.h = cellWidth - 10;
-
         // id
         tempCell.cellPos = i;
         tempCell.cellTexture = loadImage(
@@ -539,8 +534,7 @@ void CKey::LoadKeys(
     for (int i = 0; i < files.size(); ++i)
     {
         CKey key{};
-        key.keyRect.w = keyWidth;
-        key.keyRect.h = keyWidth;
+        // id
         key.keypos = i;
 
         std::string s = "imgs/";
@@ -551,6 +545,7 @@ void CKey::LoadKeys(
 
         keypad.keys.push_back(key);
     }
+
     std::string h = "imgs/keyhighlight.png";
 
     keypad.keyHighlight =
@@ -626,6 +621,7 @@ int CGrid::CheckGrid()
         }
     }
     // any mistake just show corner
+    // or how about -1?
     return 0;
 }
 
@@ -654,6 +650,7 @@ void CGrid::PutGrid(
         display.lengthOfDisplay;
 
     //test
+    // this returns nothing
     CheckGrid();
 }
 
@@ -670,12 +667,6 @@ void CGame::HelpPutGrid()
 void CGrid::SelectedCell(
     SDL_Rect touch, SDL_Rect grid)
 {
-    // i think grid.x is actually the w,x,y,z values
-    /*
-    int cellX = int((touch.x - grid.x) / cellWidth);
-    int cellY = int((touch.y - grid.y) / cellWidth);
-    */
-
     // minus gridArea.x as layouts 0 and 2
     // will be at 0,0
     // layout 1 will be at 820,0
@@ -710,8 +701,6 @@ void CGame::PositionGrid(int offset)
 {
     for (int i = 0; i < grid.size(); ++i)
     {
-        //grid[i].x += gridArea + ( ) ???
-
         // offset because in portrait or landscape
         // only x changes
 
@@ -766,28 +755,38 @@ void CGame::HelpDisplayDisplay()
     }
 }
 
-void CKey::GrabKeySize(int sw)
+void CMenu::GrabMenuSize(
+    int restWidth, int restHeight, int split)
 {
-    // too many duplicate vars
-    keyWidth = int(sw / 6);
-    keyRect.w = int(sw / 6);
-    keyRect.h = int(sw / 6);
 }
 
-void CGrid::GrabGridSize(int sw)
+void CKey::GrabKeySize(
+    int restWidth, int restHeight, int split)
 {
-    cellWidth = int(sw / GRIDCOLUMNS);
-    valueWidth = cellWidth - 10;
 }
 
+void CGrid::GrabGridSize(int smallest)
+{
+}
+
+/*
 void CGame::SendSize()
 {
     int smallest = (screenWidth < screenHeight)
                        ? screenWidth
                        : screenHeight;
     GrabGridSize(smallest);
-    GrabKeySize(smallest);
+    
+    // send restOfScreen
+    GrabKeySize(
+        restOfScreen.w,
+        restOfScreen.h, keyLayout);
+        
+    GrabMenuSize(
+        restOfScreen.w,
+        restOfScreen.h, keyLayout);
 }
+*/
 
 void CGame::TouchingKey(int i)
 {
@@ -855,7 +854,6 @@ void CGame::TouchingKey(int i)
     // as keyPressed is always 14
     // unless there is a 15th key
     // to hide it
-
     // i think i introduced KEY_EMPTY
     // later to get around this
     case 'o':
@@ -868,7 +866,7 @@ void CGame::TouchingKey(int i)
     {
         // nothing yet
         gameDebug = true;
-        strcpy(display.myText, "101");
+        strcpy(display.myText, "1*1");
         return;
         break;
     }
@@ -878,9 +876,26 @@ void CGame::TouchingKey(int i)
 // function for
 // change all the sizes of rects
 // when we move the phone about
+/*
+need to set
+
+ cellWidth = int(smallest / GRIDCOLUMNS);
+    valueWidth = cellWidth - 10;
+     keyRect.w = int(restWidth / split);
+    keyRect.h = int(restHeight / split);
+    menuButton.w = int(restWidth / split);
+    menuButton.h = int(restHeight / split);
+*/
 void CGame::HandleUI()
 {
     int layout = GetOrientationAndSize();
+
+    int small = (screenWidth < screenHeight)
+                    ? screenWidth
+                    : screenHeight;
+
+    cellWidth = int(small / GRIDCOLUMNS);
+    valueWidth = cellWidth - 10;
 
     // the left over screen space not grid
     int startXtraSpace{0};
@@ -890,7 +905,6 @@ void CGame::HandleUI()
 
     // nicely place the grid
     int gridXpos{0};
-    int buffer{60};
 
     switch (layout)
     {
@@ -935,22 +949,7 @@ void CGame::HandleUI()
         break;
     }
     }
-    
-    int x1, x2, y1, y2{0};
-    for(int i=1; i<GRIDCOLUMNS; ++i)
-    {
-        int ans = (endXtraSpace - startXtraSpace) /
-        GRIDCOLUMNS;
-        
-        x1 = x2 = startXtraSpace + ans*i;
-        y1 = startYtraSpace;
-        y2 = endYtraSpace;
-        gridLayoutX.push_back(x1);
-        gridLayoutX.push_back(y1);
-        gridLayoutX.push_back(x2);
-        gridLayoutX.push_back(y2);
-    }
-    
+
     restOfScreen.x = startXtraSpace;
     restOfScreen.y = startYtraSpace;
     restOfScreen.w =
@@ -969,14 +968,41 @@ void CGame::HandleUI()
     //
     // display
     //
-    
+
     // there are 7 portions of the screen
-    if (screenWidth < screenHeight)
-        displayRatio = screenWidth/7;
-    else
-        displayRatio = screenHeight/7;
+    // but need X and Y
+    // 720x880
+    displayRatioW = int(restOfScreen.w / keyLayout);
+    displayRatioH = int(restOfScreen.h / keyLayout);
+
+    /*
+    int x1, x2, y1, y2{0};
+    for(int i=0; i<keyLayout; ++i)
+    {
+        x1 = x2 = restOfScreen.x + displayRatioW * i;
+        y1 = restOfScreen.y;
+        y2 = restOfScreen.y + restOfScreen.h;
+        gridLayoutX.push_back(x1);
+        gridLayoutX.push_back(y1);
+        gridLayoutX.push_back(x2);
+        gridLayoutX.push_back(y2);
+    }
+    
+    for(int i=0;i<keyLayout;++i)
+    {
+        y1 = y2 = restOfScreen.y +
+            displayRatioH * i;
+        x1 = restOfScreen.x;
+        x2 = restOfScreen.x + restOfScreen.w;
+        gridLayoutY.push_back(x1);
+        gridLayoutY.push_back(y1);
+        gridLayoutY.push_back(x2);
+        gridLayoutY.push_back(y2);
+    }
+    */
 
     //========== border =======
+    /*
     display.displayBorder.x =
         (endXtraSpace + startXtraSpace) / 2 -
         (display.TEXTWIDTH *
@@ -986,6 +1012,17 @@ void CGame::HandleUI()
     display.displayBorder.y = startYtraSpace + buffer;
     display.displayBorder.h =
         screenHeight / displayRatio * 2;
+        */
+    display.displayBorder.x =
+        restOfScreen.x +
+        restOfScreen.w / 2 -
+        (display.TEXTWIDTH * display.MAXDIGITS) / 2;
+
+    display.displayBorder.y =
+        restOfScreen.y + displayRatioH;
+
+    display.displayBorder.h =
+        displayRatioH;
     //========================
 
     display.numberDisplayRect.x =
@@ -1007,35 +1044,40 @@ void CGame::HandleUI()
     // keys
     //
     keypad.fullKeypadRect.x =
-        startXtraSpace;
+        restOfScreen.x + displayRatioW * 1;
     keypad.fullKeypadRect.y =
-        startYtraSpace + displayRatio * 4;
+        restOfScreen.y + displayRatioH * 3;
 
     Uint8 keyColumns = keypad.KEYCOLUMNS;
     Uint8 keyRows = keypad.KEYROWS;
 
     keypad.fullKeypadRect.w =
-        keyRect.w * keyColumns;
+        displayRatioW * keyColumns;
     keypad.fullKeypadRect.h =
-        keyRect.h * keyRows;
+        displayRatioH * keyRows;
 
-    // place keys on keypad
-    // using keypadRect
     for (int i = 0; i < files.size(); ++i)
     {
-        int whatX = int(i % 5) * keyWidth;
+        int whatX = int(i % 5) * displayRatioW;
         keypad.keys[i].keyRect.x =
             keypad.fullKeypadRect.x +
             whatX;
-        int whatY = int(i / 5) * keyWidth;
+
+        int whatY = int(i / 5) * displayRatioH;
         keypad.keys[i].keyRect.y =
             keypad.fullKeypadRect.y +
             whatY;
     }
 
+    //
     // menu
-    menuButton.x = startXtraSpace;
-    menuButton.y = startYtraSpace;
+    //
+    menuButton.x = restOfScreen.x +
+        displayRatioW * 6;
+    menuButton.y = restOfScreen.y +
+                   displayRatioH;
+    menuButton.w = displayRatioW;
+    menuButton.h = displayRatioH;
 
     //
     // debug
@@ -1187,9 +1229,9 @@ void CGame::UpdateMenu()
     SDL_RenderClear(renderer);
 
     SDL_Rect scr{0, 0, screenWidth, screenHeight};
-    
+
     if (ans == 0)
-    {   
+    {
         SDL_RenderCopy(
             renderer,
             menu.tMenuPortrait,
@@ -1208,6 +1250,8 @@ void CGame::UpdateMenu()
     SDL_RenderPresent(renderer);
 }
 
+// update uses all the rects we update
+// we set the rects in Handle
 void CGame::UpdateScreen()
 {
     SDL_SetRenderDrawColor(
@@ -1247,6 +1291,7 @@ void CGame::UpdateScreen()
                 NULL,
                 &temp);
         }
+
         //
         // match answer
         //
@@ -1262,6 +1307,7 @@ void CGame::UpdateScreen()
         }
         SDL_RenderFillRect(
             renderer, &grid[i].cellValueRect);
+
         //
         // cellValueTexture
         //
@@ -1291,11 +1337,20 @@ void CGame::UpdateScreen()
     // display
     //
     //
+
     // ===== border ========
     SDL_SetRenderDrawColor(renderer,
                            200, 200, 250, 255);
+    /*
     SDL_RenderDrawRect(renderer,
                        &display.displayBorder);
+                       */
+    SDL_SetRenderDrawColor(
+        renderer,
+        50, 50, 50, 255);
+    SDL_RenderFillRect(
+        renderer,
+        &display.displayBorder);
     //=========================
 
     if (display.displayTexture != NULL)
@@ -1314,7 +1369,9 @@ void CGame::UpdateScreen()
     //
     // keypad
     //
+
     // test we cover up the green test area
+    // actually key images have alpha
     SDL_SetRenderDrawColor(renderer,
                            50, 150, 50, 255);
     SDL_RenderFillRect(renderer,
@@ -1339,20 +1396,44 @@ void CGame::UpdateScreen()
     //
     // menu
     //
-    
+
     SDL_RenderFillRect(
         renderer,
         &menuButton);
 
+    if(menu.tMenuButton != NULL)
+        SDL_RenderCopy(
+            renderer,
+            menu.tMenuButton,
+            NULL,
+            &menuButton);
+
     //
     // debug
     //
-    
-    SDL_SetRenderDrawColor(
-        renderer, 0,0,255,255);
-        
     /*
-    for(int i=0;i<GRIDCOLUMNS*4;i+=4)
+    // testing gridArea
+    SDL_SetRenderDrawColor(
+        renderer,
+        200,0,0,255);
+    SDL_RenderFillRect(
+        renderer,
+        &gridArea);
+    
+    // testing restOfScreen
+    SDL_SetRenderDrawColor(
+        renderer,
+        0,0,255,255);
+    SDL_RenderFillRect(
+        renderer,
+        &restOfScreen);
+    */
+
+    /*
+    SDL_SetRenderDrawColor(
+        renderer, 255,255,255,255);
+    
+    for(int i=0;i<keyLayout*4;i+=4)
     {
     SDL_RenderDrawLine(
         renderer,
@@ -1360,17 +1441,22 @@ void CGame::UpdateScreen()
         gridLayoutX[i+1],
         gridLayoutX[i+2],
         gridLayoutX[i+3]);
+        
+    SDL_RenderDrawLine(
+        renderer,
+        gridLayoutY[i],
+        gridLayoutY[i+1],
+        gridLayoutY[i+2],
+        gridLayoutY[i+3]);
     }
     */
-    gridLayoutX.empty();
-    
-    SDL_RenderFillRect(
-        renderer,
-        &restOfScreen);
-    
+    gridLayoutX.clear();
+    gridLayoutY.clear();
+
     // debug is crashing my program
     // can you see why?
 
+    /*
     if (gameDebug || gridDebug || keyDebug)
     {
         SDL_SetRenderDrawColor(
@@ -1380,7 +1466,8 @@ void CGame::UpdateScreen()
         SDL_RenderFillRect(
             renderer, &debugRect);
     }
-/*
+*/
+    /*
         std::string sRes =
             std::to_string(screenWidth) + " x " + std::to_string(screenHeight);
 
