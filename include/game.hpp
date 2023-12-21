@@ -52,17 +52,19 @@ enum middleNumbers
     RIGHT_THREE_DOWN
 };
 
-struct Cell : SDL_Rect
+//struct Cell : SDL_Rect
+struct Cell
 {
     SDL_Texture *cellTexture = nullptr;
     SDL_Texture *cellValueTexture = nullptr;
-    SDL_Rect cellValueRect{120, 120, 110, 110};
-
+    SDL_Rect cellRect{0,0,110,110};
+    SDL_Rect cellValueRect{0, 0, 100, 100};
+/*
     int x = 0;
     int y = 0;
     int w = 120;
     int h = 120;
-
+*/
     int cellValue{0};
     int cellValueLength{0};
     unsigned int cellPos{0};
