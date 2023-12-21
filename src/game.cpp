@@ -233,8 +233,44 @@ void CGame::Run()
 
 void CGame::QuitGame()
 {
-    SDL_DestroyWindow(window);
+    // destroy it àll
+    for (int i = 0; i < grid.size(); ++i)
+    {
+        if (grid[i].cellValueTexture != NULL)
+        {
+            SDL_DestroyTexture(
+                grid[i].cellValueTexture);
+        }
+        if (grid[i].cellTexture != NULL)
+        {
+            SDL_DestroyTexture(
+                grid[i].cellTexture);
+        }
+    }
+
+    for (int i = 0; i < keypad.keys.size(); ++i)
+    {
+        if (keypad.keys[i].keyTexture != NULL)
+        {
+            SDL_DestroyTexture(
+                keypad.keys[i].keyTexture);
+        }
+    }
+
+    if(tMenuPortrait != NULL)
+    SDL_DestroyTexture(tMenuPortrait);
+    if(tMenuLandscape != NULL)
+    SDL_DestroyTexture(tMenuLandscape);
+    if(tMenuButton != NULL)
+    SDL_DestroyTexture(tMenuButton);
+
+    if(display.displayTexture != NULL)
+    SDL_DestroyTexture(display.displayTexture);
+
+    if(renderer != NULL)
     SDL_DestroyRenderer(renderer);
+    if(window != NULL)
+    SDL_DestroyWindow(window);
 }
 
 int CGrid::Sum(int a, int b)
@@ -417,6 +453,15 @@ void CGrid::LoadGrid(SDL_Renderer *
     for (int i = 0; i < 36; ++i)
     {
         Cell tempCell{};
+        // while loading, we can set sizes
+        tempCell.cellRect.w = cellWidth;
+        tempCell.cellRect.h = cellWidth;
+        
+        tempCell.cellValueRect.w =
+            cellWidth - 10;
+        tempCell.cellValueRect.h =
+            cellWidth - 10;
+
         // id
         tempCell.cellPos = i;
         tempCell.cellTexture = loadImage(
@@ -601,7 +646,7 @@ void CGame::HelpKeypadLoad(
 void CGrid::SetWXYZ()
 {
     // high set in menu
-    w = (rand() % high);
+    w = rand() % high;
     x = rand() % high;
     y = rand() % high;
     z = rand() % high;
@@ -703,15 +748,26 @@ void CGame::PositionGrid(int offset)
     {
         // offset because in portrait or landscape
         // only x changes
-
-        // can we use grid[i].w?
-        grid[i].x = (i % 6) * cellWidth + offset;
+        /*
+        grid[i].x =(i % 6) * cellWidth + offset;
         grid[i].y = int(i / 6) * cellWidth;
-
-        //the cellValues as well
+        
+         //the cellValues as well
         // in LoadGrid we shrink w,h
         grid[i].cellValueRect.x = grid[i].x + 5;
         grid[i].cellValueRect.y = grid[i].y + 5;
+*/
+
+        // new way
+        grid[i].cellRect.x =
+            (i % 6) * grid[i].cellRect.w + offset;
+        grid[i].cellRect.y =
+            int(i / 6) * grid[i].cellRect.w;
+
+        grid[i].cellValueRect.x =
+            grid[i].cellRect.x + 5;
+        grid[i].cellValueRect.y =
+            grid[i].cellRect.y + 5;
     }
 }
 
@@ -895,7 +951,7 @@ void CGame::HandleUI()
                     : screenHeight;
 
     cellWidth = int(small / GRIDCOLUMNS);
-    valueWidth = cellWidth - 10;
+    //valueWidth = cellWidth - 10;
 
     // the left over screen space not grid
     int startXtraSpace{0};
@@ -1067,13 +1123,18 @@ void CGame::HandleUI()
         keypad.keys[i].keyRect.y =
             keypad.fullKeypadRect.y +
             whatY;
+
+        keypad.keys[i].keyRect.w =
+            displayRatioW;
+        keypad.keys[i].keyRect.h =
+            displayRatioH;
     }
 
     //
     // menu
     //
     menuButton.x = restOfScreen.x +
-        displayRatioW * 6;
+                   displayRatioW * 6;
     menuButton.y = restOfScreen.y +
                    displayRatioH;
     menuButton.w = displayRatioW;
@@ -1270,17 +1331,21 @@ void CGame::UpdateScreen()
     for (int i = 0; i < grid.size(); ++i)
     {
         // convert Cell to Rect
+        /*
         SDL_Rect temp{};
         temp.x = grid[i].x;
         temp.y = grid[i].y;
         temp.w = grid[i].w;
         temp.h = grid[i].h;
+        */
+
+        //grid[i].cellRect
 
         SDL_RenderCopy(
             renderer,
             grid[i].cellTexture,
             NULL,
-            &temp);
+            &grid[i].cellRect);
 
         // if a cell is selected
         if (i == selected)
@@ -1289,7 +1354,7 @@ void CGame::UpdateScreen()
                 renderer,
                 selectTexture,
                 NULL,
-                &temp);
+                &grid[i].cellRect);
         }
 
         //
@@ -1305,6 +1370,7 @@ void CGame::UpdateScreen()
             SDL_SetRenderDrawColor(
                 renderer, 200, 10, 0, 255);
         }
+        // dont use cellRect or we render over
         SDL_RenderFillRect(
             renderer, &grid[i].cellValueRect);
 
@@ -1401,7 +1467,7 @@ void CGame::UpdateScreen()
         renderer,
         &menuButton);
 
-    if(menu.tMenuButton != NULL)
+    if (menu.tMenuButton != NULL)
         SDL_RenderCopy(
             renderer,
             menu.tMenuButton,

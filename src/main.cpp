@@ -44,16 +44,18 @@ also I wanted portrait and landscape modes.
 
 in this version the keypad will always be
 towards the top of the phone in
-either landscape mode
+landscape mode 
 
 this version can handle a keypress
-and a moving a finger due with
-different TOUCHDOWN and TOUCHUP
-TOUCHMOTION
+and a moving a finger due with TOUCHMOTION
 
 work in progress
 bugs?
-probably a lot
+sometimes the grid will turn green with
+no input entered. HelpPutGrid and PutGrid
+only are called when OK is pressed
+unless AnswerGrid blurs with the user grid
+
 */
 
 #include "game.hpp"
