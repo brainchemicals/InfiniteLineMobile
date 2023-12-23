@@ -11,6 +11,7 @@ enum State
     //GAME_TYPING,
     // using these
     GAME_MENU,
+    GAME_DIFFICULTY,
     GAME_RUNNING,
     GAME_QUIT
 };
@@ -57,15 +58,10 @@ struct Cell
 {
     SDL_Texture *cellTexture = nullptr;
     SDL_Texture *cellValueTexture = nullptr;
-    SDL_Rect cellRect{0,0,110,110};
+    SDL_Rect cellRect{0, 0, 110, 110};
     SDL_Rect cellValueRect{0, 0, 100, 100};
-/*
-    int x = 0;
-    int y = 0;
-    int w = 120;
-    int h = 120;
-*/
-    int cellValue{0};
+
+    int cellValue{2147483647}; // max value
     int cellValueLength{0};
     unsigned int cellPos{0};
     bool cellSelected{false};
@@ -91,7 +87,7 @@ struct Display
     const int MAXINPUT{5};
     SDL_Texture *displayTexture = nullptr;
     SDL_Rect numberDisplayRect{
-        0,0,TEXTWIDTH*MAXDIGITS, 100};
+        0, 0, TEXTWIDTH *MAXDIGITS, 100};
     SDL_Rect displayBorder{
         0, 0,
         TEXTWIDTH *MAXDIGITS, 100};
@@ -105,8 +101,6 @@ class CGame;
 class CKey
 {
   private:
-  
-  
   public:
     std::vector<std::string> files{};
     SDL_Texture *keyTexture = nullptr;
@@ -127,7 +121,7 @@ class CKey
 
     void GrabKeySize(
         int restWidth, int restHeight, int split);
-    
+
     void LoadKeys(
         SDL_Renderer *renderer,
         SDL_Rect gridRect,
@@ -141,8 +135,7 @@ class CKey
 
 class CGrid
 {
-    private:
-    
+  private:
     // methods for filling answer
     int Sum(int a, int b);
     int Total(int a, int b);
@@ -150,18 +143,16 @@ class CGrid
     void InitDown(int column);
     void InitLeft(int row);
     void InitRight(int row);
-    
+
     void SetWXYZ();
     // return position of error
     int CheckGrid();
-    
-    
 
   public:
     SDL_Rect gridArea{0};
     SDL_Texture *selectTexture = nullptr;
     std::vector<Cell> grid{};
-std::vector<Cell> answerGrid{};
+    std::vector<Cell> answerGrid{};
 
     bool gridDebug{false};
     SDL_Rect restOfScreen{};
@@ -169,25 +160,24 @@ std::vector<Cell> answerGrid{};
     const Uint8 GRIDCOLUMNS{6};
 
     // make the grid run on any resolution
-    
+
     int cellWidth{120};
     int valueWidth{100};
-    
-    
+
     unsigned int selected{0};
     int errorInt{-1};
-    
+
     int high{0};
     int w{1};
     int x{2};
     int y{3};
     int z{4};
-    
+
     void GrabGridSize(int smallest);
 
     void LoadGrid(SDL_Renderer *renderer);
-    void LoadAnswerGrid(SDL_Renderer* renderer);
-    
+    void LoadAnswerGrid(SDL_Renderer *renderer);
+
     void SelectedCell(
         SDL_Rect r, SDL_Rect g);
     void PutGrid(
@@ -199,19 +189,29 @@ std::vector<Cell> answerGrid{};
 
 class CMenu
 {
-    public:
-    SDL_Rect menuButton{0,0,120,120};
+  public:
+    SDL_Rect menuButton{0, 0, 120, 120};
     SDL_Texture *tMenuButton = nullptr;
-    
+
     SDL_Texture *tMenuPortrait = nullptr;
     SDL_Texture *tMenuLandscape = nullptr;
+
+    SDL_Texture *tMenuChoose = nullptr;
+    SDL_Texture *tMenuChooseLandscape =
+        nullptr;
     
+    SDL_Texture *tMenuContinueButton = nullptr;
+    SDL_Texture *tMenuPracticeButton = nullptr;
+    SDL_Texture *tMenuEasyButton = nullptr;
+    SDL_Texture *tMenuMediumButton = nullptr;
+    SDL_Texture *tMenuHardButton = nullptr;
+    SDL_Texture *tMenuVeryHardButton = nullptr;
+
     void GrabMenuSize(
         int restWidth, int restHeight, int split);
 };
 
-class CGame :
-public CGrid, public CKey, public CMenu
+class CGame : public CGrid, public CKey, public CMenu
 {
   public:
     CGame()
@@ -220,12 +220,12 @@ public CGrid, public CKey, public CMenu
     ~CGame()
     {
         QuitGame();
-    }
+    };
 
     SDL_Event event{};
     SDL_TouchFingerEvent f{};
     SDL_Rect touch{1, 1, 1, 1};
-    
+
     SDL_Rect debugRect{720, 0, 40, 40};
     bool gameDebug{false};
 
@@ -236,7 +236,79 @@ public CGrid, public CKey, public CMenu
 
     int InitSDL();
     void Run();
-    void QuitGame();
+    void QuitGame()
+    {
+        // destroy it àll
+        for (int i = 0; i < grid.size(); ++i)
+        {
+            if (grid[i].cellValueTexture != NULL)
+            {
+                SDL_DestroyTexture(
+                    grid[i].cellValueTexture);
+            }
+            if (grid[i].cellTexture != NULL)
+            {
+                SDL_DestroyTexture(
+                    grid[i].cellTexture);
+            }
+        }
+
+        for (int i = 0; i < keypad.keys.size(); ++i)
+        {
+            if (keypad.keys[i].keyTexture != NULL)
+            {
+                SDL_DestroyTexture(
+                    keypad.keys[i].keyTexture);
+            }
+        }
+
+        if (tMenuPortrait != NULL)
+            SDL_DestroyTexture(tMenuPortrait);
+        if (tMenuLandscape != NULL)
+            SDL_DestroyTexture(tMenuLandscape);
+        if (tMenuButton != NULL)
+            SDL_DestroyTexture(tMenuButton);
+
+        if (menu.tMenuChoose != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuChoose);
+        if (menu.tMenuContinueButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuContinueButton);
+        if (menu.tMenuPracticeButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuPracticeButton);
+        if (menu.tMenuEasyButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuEasyButton);
+        if (menu.tMenuMediumButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuMediumButton);
+        if (menu.tMenuHardButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuHardButton);
+        if (menu.tMenuVeryHardButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuVeryHardButton);
+                
+        if(menu.tMenuChoose != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuChoose);
+        if(menu.tMenuChooseLandscape != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuChooseLandscape);
+        if(menu.tMenuContinueButton != NULL)
+            SDL_DestroyTexture(
+                menu.tMenuContinueButton);
+
+        if (display.displayTexture != NULL)
+            SDL_DestroyTexture(display.displayTexture);
+
+        if (renderer != NULL)
+            SDL_DestroyRenderer(renderer);
+        if (window != NULL)
+            SDL_DestroyWindow(window);
+    };
 
     //===============
     //Helpers
@@ -247,22 +319,22 @@ public CGrid, public CKey, public CMenu
         SDL_Renderer *renderer,
         SDL_Rect rect,
         Keypad &keypad);
-        
+
     // passing renderer
     void HelpGridDisplay();
     void HelpKeypadDisplay();
     void HelpDisplayDisplay();
-    
+
     void HelpPutGrid();
     void HelpAnswerGrid();
     //==========
-    
+
     void SendSize();
-    
+
   private:
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
-    
+
     std::vector<int> gridLayoutX{};
     std::vector<int> gridLayoutY{};
 
@@ -271,14 +343,17 @@ public CGrid, public CKey, public CMenu
     int screenHeight{0};
     int displayRatioW{0};
     int displayRatioH{0};
-    const Uint8 keyLayout{7};
-    
+    const Uint8 KEYLAYOUT{7};
+
     void LoadMenu();
 
     void InputGame();
-    char InputMenu();
     void UpdateScreen();
-    void UpdateMenu();
+    
+    void InputMenuInstructions();
+    char InputMenuDifficulty();
+    void UpdateMenuIns();
+    void UpdateMenuDiff();
 
     void HandleUI();
     void PositionGrid(int offset);
