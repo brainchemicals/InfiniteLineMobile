@@ -179,7 +179,13 @@ void CGame::Run()
         {
         case GAME_MENU:
         {
-            char output = InputMenu();
+            InputMenuInstructions();
+            break;
+        }
+        case GAME_DIFFICULTY:
+        {
+            char output =
+                InputMenuDifficulty();
 
             if (output == 0)
             {
@@ -229,48 +235,6 @@ void CGame::Run()
         }
         }
     }
-}
-
-void CGame::QuitGame()
-{
-    // destroy it àll
-    for (int i = 0; i < grid.size(); ++i)
-    {
-        if (grid[i].cellValueTexture != NULL)
-        {
-            SDL_DestroyTexture(
-                grid[i].cellValueTexture);
-        }
-        if (grid[i].cellTexture != NULL)
-        {
-            SDL_DestroyTexture(
-                grid[i].cellTexture);
-        }
-    }
-
-    for (int i = 0; i < keypad.keys.size(); ++i)
-    {
-        if (keypad.keys[i].keyTexture != NULL)
-        {
-            SDL_DestroyTexture(
-                keypad.keys[i].keyTexture);
-        }
-    }
-
-    if(tMenuPortrait != NULL)
-    SDL_DestroyTexture(tMenuPortrait);
-    if(tMenuLandscape != NULL)
-    SDL_DestroyTexture(tMenuLandscape);
-    if(tMenuButton != NULL)
-    SDL_DestroyTexture(tMenuButton);
-
-    if(display.displayTexture != NULL)
-    SDL_DestroyTexture(display.displayTexture);
-
-    if(renderer != NULL)
-    SDL_DestroyRenderer(renderer);
-    if(window != NULL)
-    SDL_DestroyWindow(window);
 }
 
 int CGrid::Sum(int a, int b)
@@ -434,10 +398,12 @@ void CGame::HelpAnswerGrid()
 
 void CGame::LoadMenu()
 {
+    // in game
     menu.tMenuButton = loadImage(
         renderer,
         "imgs/menu_button.png");
 
+    // on game start
     menu.tMenuPortrait = loadImage(
         renderer,
         "imgs/tutorial.png");
@@ -445,6 +411,17 @@ void CGame::LoadMenu()
     menu.tMenuLandscape = loadImage(
         renderer,
         "imgs/tutorial_wide.png");
+        
+    // second menu
+    menu.tMenuChoose = loadImage(
+        renderer, "imgs/difficulty_menu.png");
+        
+    menu.tMenuChooseLandscape = loadImage(
+        renderer, "imgs/difficulty_landscape.png");
+        
+    menu.tMenuContinueButton =
+        loadImage(renderer,
+            "imgs/continue_button.png");
 }
 
 void CGrid::LoadGrid(SDL_Renderer *
@@ -836,11 +813,11 @@ void CGame::SendSize()
     // send restOfScreen
     GrabKeySize(
         restOfScreen.w,
-        restOfScreen.h, keyLayout);
+        restOfScreen.h, KEYLAYOUT);
         
     GrabMenuSize(
         restOfScreen.w,
-        restOfScreen.h, keyLayout);
+        restOfScreen.h, KEYLAYOUT);
 }
 */
 
@@ -932,16 +909,6 @@ void CGame::TouchingKey(int i)
 // function for
 // change all the sizes of rects
 // when we move the phone about
-/*
-need to set
-
- cellWidth = int(smallest / GRIDCOLUMNS);
-    valueWidth = cellWidth - 10;
-     keyRect.w = int(restWidth / split);
-    keyRect.h = int(restHeight / split);
-    menuButton.w = int(restWidth / split);
-    menuButton.h = int(restHeight / split);
-*/
 void CGame::HandleUI()
 {
     int layout = GetOrientationAndSize();
@@ -1028,12 +995,12 @@ void CGame::HandleUI()
     // there are 7 portions of the screen
     // but need X and Y
     // 720x880
-    displayRatioW = int(restOfScreen.w / keyLayout);
-    displayRatioH = int(restOfScreen.h / keyLayout);
+    displayRatioW = int(restOfScreen.w / KEYLAYOUT);
+    displayRatioH = int(restOfScreen.h / KEYLAYOUT);
 
     /*
     int x1, x2, y1, y2{0};
-    for(int i=0; i<keyLayout; ++i)
+    for(int i=0; i<KEYLAYOUT; ++i)
     {
         x1 = x2 = restOfScreen.x + displayRatioW * i;
         y1 = restOfScreen.y;
@@ -1044,7 +1011,7 @@ void CGame::HandleUI()
         gridLayoutX.push_back(y2);
     }
     
-    for(int i=0;i<keyLayout;++i)
+    for(int i=0;i<KEYLAYOUT;++i)
     {
         y1 = y2 = restOfScreen.y +
             displayRatioH * i;
@@ -1256,31 +1223,59 @@ void CGame::InputGame()
     }
 }
 
-char CGame::InputMenu()
+
+//
+// unless i create one texture and
+// pass relevant menu textures
+// into it
+//
+void CGame::InputMenuInstructions()
 {
-    SDL_Event menuE{};
-    bool escape{false};
+    SDL_Event menuI{};
+    bool escapeInstructions{false};
 
-    while (!escape)
+    while (!escapeInstructions)
     {
-        UpdateMenu();
+        UpdateMenuIns();
 
-        while (SDL_PollEvent(&menuE))
+        while (SDL_PollEvent(&menuI))
         {
-            switch (menuE.type)
+            switch (menuI.type)
             {
             case SDL_FINGERDOWN:
             {
-                escape = true;
-                std::cout << "Was in menu.";
+                escapeInstructions = true;
+                gameState = State::GAME_DIFFICULTY;
             }
             }
+        }
+    }
+}
+
+char CGame::InputMenuDifficulty()
+{
+    SDL_Event menuD{};
+    bool escapeDifficulty{false};
+    
+    while(!escapeDifficulty)
+    {
+        UpdateMenuDiff();
+        
+        if(SDL_PollEvent(&menuD))
+        {
+        switch(menuD.type)
+        {
+            case SDL_FINGERDOWN:
+            {
+                escapeDifficulty = true;
+            }
+        }
         }
     }
     return 1;
 }
 
-void CGame::UpdateMenu()
+void CGame::UpdateMenuIns()
 {
     int ans = GetOrientationAndSize();
 
@@ -1306,6 +1301,37 @@ void CGame::UpdateMenu()
             menu.tMenuLandscape,
             NULL,
             &scr);
+    }
+
+    SDL_RenderPresent(renderer);
+}
+
+void CGame::UpdateMenuDiff()
+{
+    int ans = GetOrientationAndSize();
+    
+    SDL_SetRenderDrawColor(
+        renderer,
+        200,10,10,255);
+    SDL_RenderClear(renderer);
+    
+    SDL_Rect src {0,0, screenWidth, screenHeight};
+
+    if(ans == 0)
+    {
+        SDL_RenderCopy(
+            renderer,
+            menu.tMenuChoose,
+            NULL,
+            &src);
+    }
+    else
+    {
+        SDL_RenderCopy(
+            renderer,
+            menu.tMenuChooseLandscape,
+            NULL,
+            &src);
     }
 
     SDL_RenderPresent(renderer);
@@ -1499,7 +1525,7 @@ void CGame::UpdateScreen()
     SDL_SetRenderDrawColor(
         renderer, 255,255,255,255);
     
-    for(int i=0;i<keyLayout*4;i+=4)
+    for(int i=0;i<KEYLAYOUT*4;i+=4)
     {
     SDL_RenderDrawLine(
         renderer,
