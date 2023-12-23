@@ -52,17 +52,19 @@ enum middleNumbers
     RIGHT_THREE_DOWN
 };
 
-struct Cell : SDL_Rect
+//struct Cell : SDL_Rect
+struct Cell
 {
     SDL_Texture *cellTexture = nullptr;
     SDL_Texture *cellValueTexture = nullptr;
-    SDL_Rect cellValueRect{120, 120, 110, 110};
-
+    SDL_Rect cellRect{0,0,110,110};
+    SDL_Rect cellValueRect{0, 0, 100, 100};
+/*
     int x = 0;
     int y = 0;
     int w = 120;
     int h = 120;
-
+*/
     int cellValue{0};
     int cellValueLength{0};
     unsigned int cellPos{0};
@@ -123,7 +125,8 @@ class CKey
     // int keyPressed{14};
     //bool keyPressed{false};
 
-    void GrabKeySize(int sw);
+    void GrabKeySize(
+        int restWidth, int restHeight, int split);
     
     void LoadKeys(
         SDL_Renderer *renderer,
@@ -180,7 +183,7 @@ std::vector<Cell> answerGrid{};
     int y{3};
     int z{4};
     
-    void GrabGridSize(int sw);
+    void GrabGridSize(int smallest);
 
     void LoadGrid(SDL_Renderer *renderer);
     void LoadAnswerGrid(SDL_Renderer* renderer);
@@ -194,14 +197,21 @@ std::vector<Cell> answerGrid{};
     bool GridComplete();
 };
 
-class Menu
+class CMenu
 {
     public:
+    SDL_Rect menuButton{0,0,120,120};
+    SDL_Texture *tMenuButton = nullptr;
+    
     SDL_Texture *tMenuPortrait = nullptr;
     SDL_Texture *tMenuLandscape = nullptr;
+    
+    void GrabMenuSize(
+        int restWidth, int restHeight, int split);
 };
 
-class CGame : public CGrid, public CKey
+class CGame :
+public CGrid, public CKey, public CMenu
 {
   public:
     CGame()
@@ -221,7 +231,7 @@ class CGame : public CGrid, public CKey
 
     Keypad keypad{};
     Display display{};
-    Menu menu{};
+    CMenu menu{};
     State gameState{};
 
     int InitSDL();
@@ -252,7 +262,6 @@ class CGame : public CGrid, public CKey
   private:
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
-    SDL_Rect menuButton{0,0,120,120};
     
     std::vector<int> gridLayoutX{};
     std::vector<int> gridLayoutY{};
@@ -260,7 +269,9 @@ class CGame : public CGrid, public CKey
     bool loopgame = true;
     int screenWidth{0};
     int screenHeight{0};
-    int displayRatio{0};
+    int displayRatioW{0};
+    int displayRatioH{0};
+    const Uint8 keyLayout{7};
     
     void LoadMenu();
 
